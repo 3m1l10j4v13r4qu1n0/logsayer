@@ -1,0 +1,11 @@
+# Prompt — Decidora de Verdad (auditoría {{ date }})
+
+Vas a auditar spec vs código real del proyecto «{{ project_name }}».
+
+1. Lee cada HU en `docs/04_user_stories/<HU>/README.md`.
+2. Para cada HU, busca en el código real la evidencia de cada criterio
+   de "Cómo se valida".
+3. Escribe el resultado en `docs/06_audits/{{ report_name }}` siguiendo la
+   estructura ya generada. No marques una HU como cumplida sin evidencia,
+   y decílo si no está implementada.
+4. Contexto: {{ closed_hus }} HUs cerradas desde la última auditoría.

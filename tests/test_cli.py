@@ -39,6 +39,17 @@ def test_init_here_rejects_name(cwd: Path) -> None:
     assert result.exit_code != 0
 
 
+def test_init_here_adopts_non_empty_cwd(cwd: Path) -> None:
+    (cwd / "algo.txt").write_text("x", encoding="utf-8")
+    (cwd / "AGENTS.md").write_text("contenido propio", encoding="utf-8")
+    result = runner.invoke(app, ["init", "--here"])
+    assert result.exit_code == 0, result.output
+    assert (cwd / "docs" / "project_state.md").is_file()
+    assert (cwd / "logsayer.toml").is_file()
+    assert (cwd / "AGENTS.md").read_text(encoding="utf-8") == "contenido propio"
+    assert "preservados" in result.output
+
+
 def test_init_rejects_non_empty_target(cwd: Path) -> None:
     occupied = cwd / "ocupado"
     occupied.mkdir()

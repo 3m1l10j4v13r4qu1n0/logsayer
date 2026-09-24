@@ -61,9 +61,20 @@ def resolve_target(
     return base / project_name, project_name
 
 
-def scaffold(target: Path, project_name: str, config: LogsayerConfig) -> None:
-    """Crea el árbol de capas y renderiza los documentos iniciales en `target`."""
-    validate_target(target)
+def scaffold(
+    target: Path,
+    project_name: str,
+    config: LogsayerConfig,
+    adopt: bool = False,
+) -> list[Path]:
+    """Crea el árbol de capas y renderiza los documentos iniciales en `target`.
+
+    En modo `adopt` (spec §5: `init --here` sobre un proyecto existente) no
+    exige destino vacío y no sobrescribe archivos ya presentes: crea solo lo
+    que falta. Devuelve los paths escritos (relativos a `target`).
+    """
+    if not adopt:
+        validate_target(target)
     env = Environment(
         loader=PackageLoader("logsayer", "templates"),
         autoescape=select_autoescape(("html", "xml")),
@@ -81,8 +92,13 @@ def scaffold(target: Path, project_name: str, config: LogsayerConfig) -> None:
         "bitacora_max_lines": config.bitacora_max_lines,
         "audit_threshold_hus": config.audit_threshold_hus,
     }
+    written: list[Path] = []
     for rel_path, template_name in RENDERED_FILES.items():
-        rendered = env.get_template(template_name).render(**context)
         file_path = target / rel_path
+        if adopt and file_path.is_file():
+            continue
+        rendered = env.get_template(template_name).render(**context)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(rendered, encoding="utf-8")
+        written.append(file_path.relative_to(target))
+    return written

@@ -14,7 +14,12 @@ from logsayer.core import audit, fremen, logbook, project, specs, suk
 from logsayer.core.checks import CheckResult
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
 from logsayer.core.project import project_name
-from logsayer.scaffold import ScaffoldError, resolve_target, scaffold
+from logsayer.scaffold import (
+    RENDERED_FILES,
+    ScaffoldError,
+    resolve_target,
+    scaffold,
+)
 
 app = typer.Typer(
     help="logsayer — sistema de 5 capas documentales para proyectos con agentes IA.",
@@ -56,10 +61,17 @@ def init(
     """Inicializa la estructura docs/ + AGENTS.md + logsayer.toml."""
     try:
         target, name = resolve_target(project_name, here, Path.cwd())
-        scaffold(target, name, LogsayerConfig.load())
+        existing = {rel for rel in RENDERED_FILES if (target / rel).is_file()}
+        written = scaffold(target, name, LogsayerConfig.load(), adopt=here)
     except ScaffoldError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Scaffold listo en {target}")
+    if here and existing:
+        typer.echo("Modo adopt: preservados (ya existían, no se sobrescriben):")
+        for rel in sorted(existing):
+            typer.echo(f"  - {rel}")
+    for written_path in written:
+        typer.echo(f"Generado: {written_path}")
 
 
 agent_typer = typer.Typer(

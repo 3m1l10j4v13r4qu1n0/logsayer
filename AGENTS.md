@@ -33,11 +33,35 @@ CLI open source en Python que scaffoldea y coordina un sistema de 5 capas docume
 ## Reglas del proyecto
 - No duplicar lógica del framework dentro de los templates/adaptadores que genera el CLI: todo juicio vive en `logsayer/core/`, los archivos generados son wrappers finos (spec §6).
 
-## Estado actual
-- Fase 5 del roadmap (documentación y publicación): `README.md` con disclaimer Dune (§12), `LICENSE` MIT, `pyproject.toml` empaquetado (readme, clasificadores, URLs, authors), `examples/hello-logsayer/` con sesión real documentada, y wheel verificado (`uv build` → install → `init` + `check` OK). Faltó del roadmap: publicar en PyPI (requiere token de `3m1l10j4v13r4qu1n0`), hecho de forma manual con `uv publish`/`twine`.
-- Versión actual: `0.5.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`).
-- Pendientes del roadmap: fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 6 (comunidad: presets, más agentes).
-- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.5.0`).
+## Coordinación con docs/ (dogfooding)
+Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbrales viven en `logsayer.toml`; esto tiene que reflejarlos (lo verifica `logsayer fremen verify`).
 
-## Memoria del proyecto (por definir)
-- [ ] Dogfooding del propio repo: bootstrappear `docs/` de logsayer sobre sí mismo y mantener `docs/project_state.md` (Capa 2) + logbook (Capa 3).
+### Al iniciar sesión
+1. Leer `docs/project_state.md` (Capa 2, obligatorio, siempre).
+2. Si el contador de HUs cerradas desde la última auditoría es >= 3 HUs, proponer auditoría (Decidora de Verdad) antes de tomar tarea nueva.
+3. NO leer `docs/logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
+
+### Durante la sesión
+- Si el uso de contexto supera el 70%, proponer cierre de sesión antes de tomar más tareas.
+- Trabajar cada HU leyendo solo su carpeta en `docs/04_user_stories/`.
+- Decisión de arquitectura nueva → candidata a entrada de logbook y a `docs/02_technical/decisions.md`; nunca se escribe directo en el estado.
+
+### Al cerrar sesión o commit (requiere aprobación previa)
+- Sobrescribir `docs/project_state.md` (snapshot, no acumulativo).
+- Append en el logbook activo `docs/logbooks/logbook_dogfooding_NN.md`.
+- Si el logbook activo supera las 400 líneas, crear `NN+1` y actualizar `00_index.md`.
+- Si se cerró una HU, incrementar el contador de auditoría.
+
+### Auditoría (Decidora de Verdad)
+- Disparador: contador >= 3 HUs. Ejecutar `logsayer audit run`.
+- Compara `docs/04_user_stories/` contra el código real; resultado en `docs/06_audits/audit_<fecha>.md`.
+- Resetear el contador tras la aprobación.
+
+## Estado actual
+- Dogfooding del marco activo: logsayer se gobierna a sí mismo (docs/ bootstrappeado con `init --here` en modo adopt, HUs reales HU-01..05 en `docs/04_user_stories/`, logbooks por fase, auditoría 2026-09-24 aprobada y contador reseteado).
+- Versión actual: `0.6.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`). El modo adopt de `init --here` (spec §5) cerró la deuda de repositorios existentes, verificado con tests + check + fremen.
+- Fases 0-5 del roadmap cerradas. Pendientes: publicar en PyPI (token de `3m1l10j4v13r4qu1n0`), fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 6 (comunidad: presets, más agentes).
+- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.6.0`).
+
+## Memoria del proyecto
+- [x] Dogfooding del propio repo: `docs/` bootstrappeado sobre sí mismo; `docs/project_state.md` (Capa 2), logbooks por fase (Capa 3) y auditoría (Capa 4) mantenidos en el marco de sesiones.

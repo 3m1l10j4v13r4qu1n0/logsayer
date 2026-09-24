@@ -7,6 +7,8 @@ from typing import Annotated
 
 import typer
 
+from logsayer.adapters.generate import generate_adapters
+from logsayer.adapters.registry import AgentError, resolve_adapter
 from logsayer.config import LogsayerConfig
 from logsayer.core import audit, logbook, project, specs
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
@@ -56,6 +58,32 @@ def init(
     except ScaffoldError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Scaffold listo en {target}")
+
+
+agent_typer = typer.Typer(
+    help="Adaptadores por agente (Capa: coordinación multi-agente).",
+    no_args_is_help=True,
+)
+
+
+@agent_typer.command("add")
+def agent_add(
+    agent: Annotated[
+        str,
+        typer.Argument(help="Agente destino (opencode | claude)."),
+    ],
+) -> None:
+    """Genera subagentes por rol en la convención nativa del agente."""
+    try:
+        spec = resolve_adapter(agent)
+        root, written = generate_adapters(Path.cwd(), spec)
+    except (AgentError, ProjectRootError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    for path in written:
+        typer.echo(f"Generado: {path.relative_to(root)}")
+
+
+app.add_typer(agent_typer, name="agent")
 
 
 spec_typer = typer.Typer(

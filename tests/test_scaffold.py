@@ -92,3 +92,29 @@ def test_scaffold_agents_md_uses_config(tmp_path: Path) -> None:
     scaffold(target, "proyecto", LogsayerConfig(audit_threshold_hus=5))
     content = (target / "AGENTS.md").read_text(encoding="utf-8")
     assert ">= 5" in content
+
+
+def test_scaffold_adopts_existing_target(tmp_path: Path) -> None:
+    target = tmp_path / "existente"
+    target.mkdir()
+    (target / "algo.txt").write_text("x", encoding="utf-8")
+    written = scaffold(target, "existente", LogsayerConfig(), adopt=True)
+    assert "docs/project_state.md" in [str(p) for p in written]
+    for directory in STATIC_DIRS:
+        assert (target / "docs" / directory / ".gitkeep").is_file()
+    assert (target / "algo.txt").read_text(encoding="utf-8") == "x"
+
+
+def test_scaffold_adopt_keeps_existing_agents(tmp_path: Path) -> None:
+    target = tmp_path / "existente"
+    target.mkdir()
+    (target / "AGENTS.md").write_text("contenido propio", encoding="utf-8")
+    written = scaffold(target, "existente", LogsayerConfig(), adopt=True)
+    assert not any(str(p) == "AGENTS.md" for p in written)
+    assert (target / "AGENTS.md").read_text(encoding="utf-8") == "contenido propio"
+
+
+def test_scaffold_adopt_requires_existing_target(tmp_path: Path) -> None:
+    written = scaffold(tmp_path / "nuevo", "nuevo", LogsayerConfig(), adopt=True)
+    assert (tmp_path / "nuevo" / "docs" / "project_state.md").is_file()
+    assert any(str(p) == "docs/project_state.md" for p in written)

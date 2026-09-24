@@ -1,0 +1,4 @@
+[logsayer]
+session_close_context_threshold = {{ "%.2f"|format(session_close_context_threshold) }}   # % de contexto usado → proponer cierre de sesión
+bitacora_max_lines = {{ bitacora_max_lines }}   # líneas por archivo atómico de bitácora antes de particionar
+audit_threshold_hus = {{ audit_threshold_hus }}   # HUs cerradas desde última auditoría → disparar audit

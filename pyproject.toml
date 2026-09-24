@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "logsayer"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI que extiende el patron spec-driven con estado, bitacora y verificacion continua de que lo construido sigue siendo lo especificado."
 requires-python = ">=3.11"
 license = { text = "MIT" }

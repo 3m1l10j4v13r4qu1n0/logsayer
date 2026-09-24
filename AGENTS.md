@@ -34,9 +34,9 @@ CLI open source en Python que scaffoldea y coordina un sistema de 5 capas docume
 - No duplicar lógica del framework dentro de los templates/adaptadores que genera el CLI: todo juicio vive en `logsayer/core/`, los archivos generados son wrappers finos (spec §6).
 
 ## Estado actual
-- Fase 3 del roadmap (adaptadores multi-agente): `init`, `spec new`, `state show`, `log add` + `log index`, `audit run` + `audit status`, y `agent add <opencode|claude>` implementados y verificados (tests + mypy + ruff).
-- Pendientes del roadmap: fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 4 (`suk doctor`/`check`, `fremen verify`/`process check`), fase 5 (README con disclaimer, PyPI, MIT), fase 6 (comunidad).
-- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`, `v0.2.0`).
+- Fase 4 del roadmap (validación): `init`, `spec new`, `state show`, `log add` + `log index`, `audit run` + `audit status`, `agent add <opencode|claude>`, y `suk doctor`/`check` + `fremen verify`/`process check` implementados y verificados (tests + mypy + ruff).
+- Pendientes del roadmap: fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 5 (README con disclaimer, PyPI, MIT, casos de ejemplo), fase 6 (comunidad).
+- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.4.0`).
 
 ## Memoria del proyecto (por definir)
 - [ ] Dogfooding del propio repo: bootstrappear `docs/` de logsayer sobre sí mismo y mantener `docs/project_state.md` (Capa 2) + logbook (Capa 3).

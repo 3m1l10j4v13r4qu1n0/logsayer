@@ -10,8 +10,10 @@ import typer
 from logsayer.adapters.generate import generate_adapters
 from logsayer.adapters.registry import AgentError, resolve_adapter
 from logsayer.config import LogsayerConfig
-from logsayer.core import audit, logbook, project, specs
+from logsayer.core import audit, fremen, logbook, project, specs, suk
+from logsayer.core.checks import CheckResult
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
+from logsayer.core.project import project_name
 from logsayer.scaffold import ScaffoldError, resolve_target, scaffold
 
 app = typer.Typer(
@@ -24,8 +26,8 @@ _ROLES: tuple[tuple[str, str], ...] = (
     ("navigator", "Capa 2 — Estado (Navegante)."),
     ("reverend-mother", "Capa 3 — Bitacora (Reverenda Madre)."),
     ("truthsayer", "Capa 4 — Verificacion semantica (Decidora)."),
-    ("suk", "Capa 4 — Verificacion mecanica (Suk Doctor). Comandos en Fase 4."),
-    ("fremen", "Capa 5 — Proceso (Fremen). Comandos en Fase 4."),
+    ("suk", "Capa 4 — Verificacion mecanica (Suk Doctor)."),
+    ("fremen", "Capa 5 — Proceso (Fremen)."),
 )
 
 _role_typers: dict[str, typer.Typer] = {}
@@ -230,3 +232,68 @@ def audit_status() -> None:
 
 
 _register_with_alias("truthsayer", audit_typer, "audit")
+
+
+def _render_checks(title: str, results: list[CheckResult]) -> None:
+    """Imprime el reporte de chequeos y sale con código 1 si algo falló."""
+    typer.echo(f"{title}\n")
+    failed = 0
+    for result in results:
+        mark = "✔" if result.ok else "✘"
+        typer.echo(f"{mark} {result.name}: {result.detail or 'OK'}")
+        if not result.ok:
+            failed += 1
+    typer.echo()
+    if failed:
+        message = (
+            f"Estado: {failed} chequeo(s) fallido(s). "
+            "Corrige antes de continuar."
+        )
+        typer.echo(message)
+        raise typer.Exit(code=1)
+    typer.echo("Estado: sano.")
+
+
+@_role_typers["suk"].command("doctor")
+def suk_doctor() -> None:
+    """Chequeo mecánico: estructura y no mezcla de capas (Suk Doctor)."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        results = suk.run_suk(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    title = f"Suk Doctor — verificación mecánica de {project_name(root)}"
+    _render_checks(title, results)
+
+
+@app.command("check")
+def check() -> None:
+    """Alias plano de `suk doctor` (spec §5)."""
+    suk_doctor()
+
+
+@_role_typers["fremen"].command("verify")
+def fremen_verify() -> None:
+    """Chequeo de proceso: marco operativo y Definition of Ready (Fremen)."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        results = fremen.run_fremen(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    title = f"Fremen — verificación de proceso de {project_name(root)}"
+    _render_checks(title, results)
+
+
+process_typer = typer.Typer(
+    help="Chequeo de proceso (Capa 5 — Fremen).",
+    no_args_is_help=True,
+)
+
+
+@process_typer.command("check")
+def process_check() -> None:
+    """Alias plano de `fremen verify` (spec §5)."""
+    fremen_verify()
+
+
+app.add_typer(process_typer, name="process")

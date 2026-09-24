@@ -4,10 +4,37 @@ build-backend = "hatchling.build"
 
 [project]
 name = "logsayer"
-version = "0.4.0"
+version = "0.5.0"
 description = "CLI que extiende el patron spec-driven con estado, bitacora y verificacion continua de que lo construido sigue siendo lo especificado."
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+authors = [
+    { name = "Emilio Javier Aquino", email = "aquinoemiliojavier@gmail.com" },
+]
+keywords = [
+    "cli",
+    "documentation",
+    "spec-driven",
+    "agents",
+    "ai",
+    "scaffolding",
+    "logbook",
+    "state",
+    "verification",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+]
 dependencies = [
     "typer>=0.12",
     "jinja2>=3.1",
@@ -19,6 +46,11 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
 ]
+
+[project.urls]
+Homepage = "https://github.com/3m1l10j4v13r4qu1n0/logsayer"
+Repository = "https://github.com/3m1l10j4v13r4qu1n0/logsayer"
+Issues = "https://github.com/3m1l10j4v13r4qu1n0/logsayer/issues"
 
 [project.scripts]
 logsayer = "logsayer.cli:app"

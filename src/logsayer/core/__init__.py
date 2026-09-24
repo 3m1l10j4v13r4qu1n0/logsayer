@@ -1,0 +1,1 @@
+"""Motor único de logsayer: lógica de dominio independiente del agente (spec §6)."""

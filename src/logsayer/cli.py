@@ -8,6 +8,8 @@ from typing import Annotated
 import typer
 
 from logsayer.config import LogsayerConfig
+from logsayer.core import audit, logbook, project, specs
+from logsayer.core.paths import ProjectRootError, require_logsayer_root
 from logsayer.scaffold import ScaffoldError, resolve_target, scaffold
 
 app = typer.Typer(
@@ -15,21 +17,25 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
+_ROLES: tuple[tuple[str, str], ...] = (
+    ("mentat", "Capa 1 — Especificacion (Mentat)."),
+    ("navigator", "Capa 2 — Estado (Navegante)."),
+    ("reverend-mother", "Capa 3 — Bitacora (Reverenda Madre)."),
+    ("truthsayer", "Capa 4 — Verificacion semantica (Decidora)."),
+    ("suk", "Capa 4 — Verificacion mecanica (Suk Doctor). Comandos en Fase 4."),
+    ("fremen", "Capa 5 — Proceso (Fremen). Comandos en Fase 4."),
+)
 
-def _role_group(name: str, help_text: str) -> None:
-    group = typer.Typer(help=help_text, no_args_is_help=True)
-    app.add_typer(group, name=name)
+_role_typers: dict[str, typer.Typer] = {}
+for _name, _help in _ROLES:
+    _role_typers[_name] = typer.Typer(help=_help, no_args_is_help=True)
+    app.add_typer(_role_typers[_name], name=_name)
 
 
-for _name, _help in (
-    ("mentat", "Capa 1 — Especificacion (Mentat). Comandos disponibles en Fase 2."),
-    ("navigator", "Capa 2 — Estado (Navegante). Comandos disponibles en Fase 2."),
-    ("reverend-mother", "Capa 3 — Bitacora (Reverenda Madre). Comandos en Fase 2."),
-    ("truthsayer", "Capa 4 — Verificacion semantica (Decidora). Comandos en Fase 2."),
-    ("suk", "Capa 4 — Verificacion mecanica (Suk Doctor). Comandos en Fase 2."),
-    ("fremen", "Capa 5 — Proceso (Fremen). Comandos disponibles en Fase 2."),
-):
-    _role_group(_name, _help)
+def _register_with_alias(role: str, sub: typer.Typer, name: str) -> None:
+    """Registra `sub` bajo el grupo del rol y con alias plano en la raíz (spec §5)."""
+    _role_typers[role].add_typer(sub, name=name)
+    app.add_typer(sub, name=name)
 
 
 @app.command()
@@ -50,3 +56,149 @@ def init(
     except ScaffoldError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Scaffold listo en {target}")
+
+
+spec_typer = typer.Typer(
+    help="Historias de usuario (Capa 1).",
+    no_args_is_help=True,
+)
+
+
+@spec_typer.command("new")
+def spec_new(
+    hu: Annotated[str, typer.Argument(help="Identificador de la HU (ej: HU-01).")],
+) -> None:
+    """Crea una HU con template mínimo en 04_user_stories/."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        target = specs.create_hu(root, hu)
+    except (ProjectRootError, specs.SpecError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"HU {hu} creada en {target}")
+
+
+_register_with_alias("mentat", spec_typer, "spec")
+
+
+state_typer = typer.Typer(
+    help="Snapshot del estado del proyecto (Capa 2).",
+    no_args_is_help=True,
+)
+
+
+@state_typer.command("show")
+def state_show() -> None:
+    """Imprime docs/project_state.md (lectura obligatoria al iniciar sesión)."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        state = project.state_file(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if not state.is_file():
+        raise typer.BadParameter(f"No existe {state}. Se crea con 'logsayer init'.")
+    typer.echo(state.read_text(encoding="utf-8").rstrip())
+
+
+_register_with_alias("navigator", state_typer, "state")
+
+
+log_typer = typer.Typer(
+    help="Bitácora append-only, particionada (Capa 3).",
+    no_args_is_help=True,
+)
+
+
+@log_typer.command("add")
+def log_add(
+    text: Annotated[str, typer.Argument(help="Texto de la entrada de bitácora.")],
+    phase: Annotated[
+        str | None,
+        typer.Option(
+            "--fase",
+            help="Fase del logbook (default: fase actual de project_state.md).",
+        ),
+    ] = None,
+) -> None:
+    """Agrega una entrada al logbook activo; particiona si supera el límite."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        config = LogsayerConfig.load(root / "logsayer.toml")
+        result = logbook.add_entry(root, text, config, phase_override=phase)
+    except (ProjectRootError, logbook.LogbookError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = result["path"]
+    assert isinstance(path, Path)
+    typer.echo(f"Entrada registrada en {path.relative_to(root)}")
+
+
+@log_typer.command("index")
+def log_index() -> None:
+    """Reconstruye docs/logbooks/00_index.md desde los archivos reales."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        index_path = logbook.write_index(root)
+    except (ProjectRootError, logbook.LogbookError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Índice actualizado en {index_path.relative_to(root)}")
+
+
+_register_with_alias("reverend-mother", log_typer, "log")
+
+
+audit_typer = typer.Typer(
+    help="Verificación semántica spec-vs-código (Capa 4).",
+    no_args_is_help=True,
+)
+
+
+@audit_typer.command("run")
+def audit_run(
+    reset_counter: Annotated[
+        bool,
+        typer.Option(
+            "--reset-counter",
+            help="Reinicia el contador de HUs en project_state.md tras la corrida.",
+        ),
+    ] = False,
+) -> None:
+    """Genera la estructura del reporte y el prompt; el resultado
+    lo produce la Decidora."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        report = audit.run_audit(root)
+        if reset_counter:
+            project.set_closed_hus(root, 0)
+    except (ProjectRootError, audit.AuditError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Estructura y prompt generados en {report.relative_to(root)}")
+    if reset_counter:
+        typer.echo("Contador de HUs reiniciado a 0 en project_state.md.")
+    else:
+        typer.echo("Contador intacto. Al aprobar, corre de nuevo con --reset-counter.")
+
+
+@audit_typer.command("status")
+def audit_status() -> None:
+    """Muestra el contador de HUs vs el umbral y el último reporte."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        config = LogsayerConfig.load(root / "logsayer.toml")
+        closed = project.read_closed_hus(root)
+        last = audit.last_audit(root)
+        threshold = config.audit_threshold_hus
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    current = f"HUs cerradas desde la última auditoría: {closed}"
+    typer.echo(f"{current} (umbral: {threshold})")
+    if last is None:
+        typer.echo("Última auditoría: ninguna reportada.")
+    else:
+        typer.echo(f"Última auditoría: {last.name} ({last.relative_to(root)})")
+    if closed >= threshold:
+        typer.echo("Estado: corresponde auditar. Ejecuta: logsayer audit run")
+    else:
+        missing = threshold - closed
+        typer.echo(f"Estado: no corresponde auditar (faltan {missing} HUs).")
+
+
+_register_with_alias("truthsayer", audit_typer, "audit")

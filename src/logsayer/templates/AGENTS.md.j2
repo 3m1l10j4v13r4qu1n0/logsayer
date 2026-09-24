@@ -1,0 +1,29 @@
+# AGENTS.md — {{ project_name }}
+
+Coordinación de las 5 capas documentales (logsayer): Especificación, Estado, Bitácora, Verificación y Proceso. Rutas en inglés; contenido en español.
+
+## Al iniciar sesión
+1. Leer `docs/project_state.md` (obligatorio, siempre).
+2. Verificar el contador de auditoría. Si es >= {{ audit_threshold_hus }}, proponer
+   auditoría (Decidora de Verdad) antes de tomar tarea nueva.
+3. NO leer `logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
+
+## Durante la sesión
+- Si el uso de contexto supera el {{ context_threshold_percent }}%, proponer cierre
+  de sesión antes de tomar más tareas nuevas.
+- Trabajar cada HU leyendo solo su carpeta en `docs/04_user_stories/`.
+- Una decisión de arquitectura nueva es candidata a entrada de logbook; no se
+  escribe directo en el estado.
+
+## Al cerrar sesión o commit (requiere aprobación previa)
+- Actualizar `docs/project_state.md` (snapshot, no acumulativo).
+- Append en `docs/logbooks/logbook_<fase>_NN.md` activo.
+- Si supera {{ bitacora_max_lines }} líneas, crear el siguiente `NN` y actualizar
+  `docs/logbooks/00_index.md`.
+- Si se cerró una HU, incrementar el contador de auditoría.
+
+## Auditoría (Decidora de Verdad)
+- Disparador: contador >= {{ audit_threshold_hus }} HUs cerradas.
+- Compara `docs/04_user_stories/` contra el código real.
+- Resultado en `docs/06_audits/audit_<fecha>.md`.
+- Resetea el contador tras la aprobación.

@@ -34,9 +34,10 @@ CLI open source en Python que scaffoldea y coordina un sistema de 5 capas docume
 - No duplicar lógica del framework dentro de los templates/adaptadores que genera el CLI: todo juicio vive en `logsayer/core/`, los archivos generados son wrappers finos (spec §6).
 
 ## Estado actual
-- Fase 4 del roadmap (validación): `init`, `spec new`, `state show`, `log add` + `log index`, `audit run` + `audit status`, `agent add <opencode|claude>`, y `suk doctor`/`check` + `fremen verify`/`process check` implementados y verificados (tests + mypy + ruff).
-- Pendientes del roadmap: fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 5 (README con disclaimer, PyPI, MIT, casos de ejemplo), fase 6 (comunidad).
-- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.4.0`).
+- Fase 5 del roadmap (documentación y publicación): `README.md` con disclaimer Dune (§12), `LICENSE` MIT, `pyproject.toml` empaquetado (readme, clasificadores, URLs, authors), `examples/hello-logsayer/` con sesión real documentada, y wheel verificado (`uv build` → install → `init` + `check` OK). Faltó del roadmap: publicar en PyPI (requiere token de `3m1l10j4v13r4qu1n0`), hecho de forma manual con `uv publish`/`twine`.
+- Versión actual: `0.5.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`).
+- Pendientes del roadmap: fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 6 (comunidad: presets, más agentes).
+- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.5.0`).
 
 ## Memoria del proyecto (por definir)
 - [ ] Dogfooding del propio repo: bootstrappear `docs/` de logsayer sobre sí mismo y mantener `docs/project_state.md` (Capa 2) + logbook (Capa 3).

@@ -8,6 +8,7 @@ from pathlib import Path
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from logsayer.config import LogsayerConfig
+from logsayer.core.inbox import INBOX_DIR, ensure_inbox
 
 STATIC_DIRS: tuple[str, ...] = (
     "01_global",
@@ -91,8 +92,14 @@ def scaffold(
         "context_threshold_percent": config.context_threshold_percent,
         "bitacora_max_lines": config.bitacora_max_lines,
         "audit_threshold_hus": config.audit_threshold_hus,
+        "inbox_max_age_days": config.inbox_max_age_days,
     }
+    inbox_ignore = target / INBOX_DIR / ".gitignore"
+    fresh_inbox = not inbox_ignore.is_file()
+    ensure_inbox(target)
     written: list[Path] = []
+    if fresh_inbox:
+        written.append(INBOX_DIR / ".gitignore")
     for rel_path, template_name in RENDERED_FILES.items():
         file_path = target / rel_path
         if adopt and file_path.is_file():

@@ -4,9 +4,10 @@ Coordinación de las 5 capas documentales (logsayer): Especificación, Estado, B
 
 ## Al iniciar sesión
 1. Leer `docs/project_state.md` (obligatorio, siempre).
-2. Verificar el contador de auditoría. Si es >= {{ audit_threshold_hus }}, proponer
+2. Correr `logsayer check` (mecánico, barato, y reporta documentos sin ubicar).
+3. Verificar el contador de auditoría. Si es >= {{ audit_threshold_hus }}, proponer
    auditoría (Decidora de Verdad) antes de tomar tarea nueva.
-3. NO leer `logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
+4. NO leer `logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
 
 ## Durante la sesión
 - Si el uso de contexto supera el {{ context_threshold_percent }}%, proponer cierre
@@ -14,6 +15,16 @@ Coordinación de las 5 capas documentales (logsayer): Especificación, Estado, B
 - Trabajar cada HU leyendo solo su carpeta en `docs/04_user_stories/`.
 - Una decisión de arquitectura nueva es candidata a entrada de logbook; no se
   escribe directo en el estado.
+
+## Documentos entrantes
+- Si `logsayer check` lista archivos en `inbox/`, delegar al subagente **Mentat**:
+  él decide la capa (`logsayer doc route`) y crea el documento (`logsayer doc new`).
+  No derivar ese contenido en el estado ni en la bitácora.
+- Si el humano entrega un documento que **no** es del proyecto (entrega, contrato,
+  acta), no ubicarlo a mano: `logsayer inbox add <archivo>`. No mover archivos del
+  proyecto, código, ni nada que el humano esté creando.
+- El CLI no redacta contenido de Capa 1 desde el archivo: mueve y nombra, el
+  Mentat deriva. Nada se borra: lo procesado va a `inbox/_done/`.
 
 ## Al cerrar sesión o commit (requiere aprobación previa)
 - Actualizar `docs/project_state.md` (snapshot, no acumulativo).

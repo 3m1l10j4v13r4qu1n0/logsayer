@@ -1,0 +1,30 @@
+# {{ title }}
+
+> Documento de Capa 1 — Especificación. Completa solo lo indispensable (spec §10).
+
+Fecha: {{ date }} · Estado: borrador
+
+## Resumen
+
+_(Una o dos líneas: qué establece este documento.)_
+{% if source %}
+
+## Fuente
+
+- Origen: `{{ source }}` (recibido el {{ date }})
+{% if source_note %}
+- Nota: {{ source_note }}
+{% endif %}
+{% if source_kind != "markdown" %}
+- El original no se versiona: quedó archivado en `inbox/_done/`. La versión de
+  referencia es este documento; si el original cambia, hay que volver a derivarlo.
+{% endif %}
+{% endif %}
+
+## Qué establece
+
+_(Alcance, supuestos y límites. Si aplica a una sola HU, linkeala.)_
+
+## Cómo se valida
+
+- _(Criterio verificable. El CLI no redacta esto: lo escribís vos o el Mentat.)_

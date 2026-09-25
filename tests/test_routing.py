@@ -5,6 +5,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from logsayer.cli import app
+from logsayer.core import routing
 
 runner = CliRunner()
 
@@ -23,6 +24,14 @@ def test_route_prints_full_table(cwd_project: Path) -> None:
         assert command in result.output
     assert "Nunca: un .md suelto en docs/" in result.output
     assert "El CLI no redacta el contenido" in result.output
+
+
+def test_route_markdown_table_matches_readme(cwd_project: Path) -> None:
+    """El README muestra la misma tabla que el core: no pueden divergir."""
+    readme = (Path(__file__).parents[1] / "README.md").read_text(encoding="utf-8")
+    for route in routing.ROUTES:
+        assert route.trigger in readme, route.trigger
+        assert route.command in readme, route.command
 
 
 def test_route_does_not_decide_global_vs_technical(cwd_project: Path) -> None:

@@ -33,22 +33,31 @@ Este documento reemplaza y consolida: la arquitectura genérica de capas, el pla
 ## 3. Estructura de directorios
 
 ```
-docs/
-├── project_state.md                # Capa 2 — Estado (Navegante)
-├── logbooks/                       # Capa 3 — Bitácora (Reverenda Madre)
-│   ├── 00_index.md
-│   ├── logbook_<fase>_01.md
-│   └── logbook_<fase>_02.md
-├── 01_global/                      # Capa 1 — visión, alcance, reglas de negocio
-├── 02_technical/                   # Capa 1 — decisiones técnicas, modelos, diagramas
-├── 03_process/                     # Capa 5 — DoR, checklist de merge (Fremen)
-├── 04_user_stories/                # Capa 1 — HU-01..HU-N
-│   └── HU-01/
-├── 05_agile_methodology/           # Capa 5 — metodología de trabajo con IA
-└── 06_audits/                      # Capa 4 — Suk Doctor + Decidora de Verdad
+proyecto/
+├── inbox/                          # punto de entrada de Capa 1 — NO es una capa
+│   └── .gitignore                  # ignora su contenido: lo que entra no se versiona
+└── docs/
+    ├── project_state.md            # Capa 2 — Estado (Navegante)
+    ├── logbooks/                   # Capa 3 — Bitácora (Reverenda Madre)
+    │   ├── 00_index.md
+    │   ├── logbook_<fase>_01.md
+    │   └── logbook_<fase>_02.md
+    ├── 01_global/                  # Capa 1 — visión, alcance, reglas de negocio
+    ├── 02_technical/               # Capa 1 — decisiones técnicas, modelos, diagramas
+    ├── 03_process/                 # Capa 5 — DoR, checklist de merge (Fremen)
+    ├── 04_user_stories/            # Capa 1 — HU-01..HU-N
+    │   └── HU-01/
+    ├── 05_agile_methodology/       # Capa 5 — metodología de trabajo con IA
+    └── 06_audits/                  # Capa 4 — Suk Doctor + Decidora de Verdad
 ```
 
 **Lenguaje de la estructura:** los nombres de carpetas y archivos van en inglés — es la superficie pública del framework: paths que invocan los adaptadores por agente y que ven usuarios de cualquier idioma. El contenido de los documentos puede estar en cualquier idioma (por defecto, el framework genera contenido en español). Los prefijos numéricos (`01_`...) son agnósticos de idioma.
+
+**`inbox/` — punto de entrada, no capa.** La banda de entrada vive en la raíz, **fuera de `docs/`**: cualquier `.md` dentro de `docs/` que no pertenezca a una capa dispara `capas_mezcladas` (§13.4.1), así que una bandeja adentro se autovería. No es una capa: no se lee al iniciar sesión, no se versiona (su `.gitignore` propio lo declara, sin tocar el `.gitignore` del proyecto), y su única salida es entrar a Capa 1.
+
+Cubre el caso que el flujo de sesión (§7) no resuelve: llega un documento de otro equipo y hay que decidir a qué capa va. El flujo es siempre el mismo: el CLI mueve y nombra (`inbox add` → `doc route` → `doc new`), el subagente **Mentat** deriva el contenido y decide la capa. Al crear el documento derivado con `--from`, el original se mueve a `inbox/_done/` y su procedencia queda registrada en el bloque `## Fuente` del documento — que por eso es obligatorio, no decorativo.
+
+**El CLI propone, no decide.** `doc route <archivo>` solo clasifica cuando la señal es inequívoca: extensión no markdown (va a la bandeja) o una HU declarada en el nombre. En cualquier otro caso devuelve las filas candidatas y una pista opcional, y la elección la hace Mentat. No existe default a `02_technical/`: un `.md` suelto que en realidad es visión de producto terminaría en la carpeta técnica, que es exactamente el error que este flujo evita (spec §10). Si el nombre choca con un documento de Capa 1 que ya existe, avisa que no duplique en vez de crear un segundo.
 
 ---
 
@@ -59,6 +68,7 @@ docs/
 session_close_context_threshold = 0.70   # % de contexto usado → proponer cierre de sesión
 bitacora_max_lines = 400                 # líneas por archivo atómico antes de particionar
 audit_threshold_hus = 3                  # HUs cerradas desde última auditoría → disparar audit
+inbox_max_age_days = 14                 # días sin ubicar en inbox/ → avisar que la bandeja envejece
 ```
 
 | Umbral | Unidad | Por qué esa unidad |
@@ -66,6 +76,7 @@ audit_threshold_hus = 3                  # HUs cerradas desde última auditoría
 | Cierre de sesión | % de contexto usado (Navegante) | Señal real expuesta por los CLIs de agente (p. ej. `/context` en opencode y Claude Code); alineado con degradación de precisión reportada pasados ~32k tokens |
 | Partición de bitácora | Líneas/tokens del archivo (Reverenda Madre) | El costo lo paga la sesión futura que lo lee, no la sesión actual — no depende del % de uso de hoy |
 | Auditoría | HUs cerradas (Decidora de Verdad) | Progreso del proyecto, no de la sesión — evita auditar sesiones de debugging que no cerraron nada |
+| Antigüedad en `inbox/` | Días sin ser ubicado (Suk Doctor) | Un documento que nadie ubica deja de ser información y pasa a ser ruido: el costo lo paga el proyecto entero, no una sesión. Días, no líneas ni % de contexto, porque lo que envejece es la *vigencia* del documento externo frente al estado actual, no su volumen |
 
 ---
 
@@ -81,11 +92,19 @@ logsayer mentat spec new <hu>               # alias: logsayer spec new
 logsayer navigator state show               # alias: logsayer state show
 logsayer reverend-mother log add "…"        # alias: logsayer log add
 logsayer reverend-mother log index          # alias: logsayer log index
+logsayer inbox                              # lista lo pendiente en la bandeja
+logsayer inbox add <archivo>                # mueve un documento externo a inbox/
+logsayer mentat doc route [<archivo>]       # alias: logsayer doc route  (propone, no decide)
+logsayer mentat doc new <capa> <nombre>     # alias: logsayer doc new  (--from <archivo>)
 logsayer suk doctor                         # alias: logsayer check
 logsayer truthsayer audit run               # alias: logsayer audit run
 logsayer truthsayer audit status            # alias: logsayer audit status
 logsayer fremen verify                      # alias: logsayer process check
 ```
+
+**Superficie de ingreso de documentos (Capa 1).** `inbox` a secas lista lo que está esperando ubicación; `inbox add` es el único comando que toca archivos del usuario: mueve el archivo que el humano le señaló a `inbox/` y nada más. `doc route` imprime la tabla de decisión (entrada → capa → destino → ¿se versiona?) sin escribir nada; con argumento devuelve los candidatos para ese archivo, y decide solo con señal inequívoca (§3). `doc new <capa> <nombre>` scaffoldea un documento de Capa 1 con el header estándar; las capas aceptadas son `global` (`docs/01_global/`) y `technical` (`docs/02_technical/`) — para una HU puntual el comando es `spec new <HU>`, que ya existe, y la tabla de ruteo lo indica. Con `--from <archivo>` deja el bloque `## Fuente` completo y mueve el original a `inbox/_done/`.
+
+Ninguno de estos comandos redacta contenido de Capa 1 a partir del archivo: el CLI nombra y ubica, el subagente Mentat deriva (spec §6). El CLI tampoco convierte PDF ni docx — avisa que hay que hacerlo antes, como paso previo y fuera del framework.
 
 ---
 
@@ -139,11 +158,13 @@ flowchart TD
 | Evento | Capa afectada | Acción | Requiere aprobación |
 |---|---|---|---|
 | Inicio de sesión | Estado | Lectura obligatoria de `project_state.md` | No |
+| Inicio de sesión | Verificación | `logsayer check` — la sesión arranca con el diagnóstico mecánico, que también reporta si hay documentos sin ubicar en `inbox/` | No |
 | Inicio de sesión (contador alto) | Verificación | Proponer auditoría | Sí, para ejecutarla |
 | Cierre de sesión / commit | Estado | Actualizar snapshot | Sí |
 | Cierre de sesión / commit | Bitácora | Append entrada en el logbook activo | Sí |
 | Logbook activo llena | Bitácora | Crear archivo atómico + actualizar índice | No (mecánico) |
 | Decisión de arquitectura nueva | Especificación | Editar `02_technical/` | Sí |
+| Documento externo en `inbox/` | Especificación | `check` lo reporta; el agente anfitrión se lo delega al subagente Mentat, que decide la capa con `doc route` y crea el documento con `doc new` | Sí, para escribir el documento derivado |
 | ≥ N HUs cerradas | Verificación | Ejecutar auditoría HU-vs-código | Sí |
 
 ---
@@ -155,9 +176,11 @@ flowchart TD
 
 ## Al iniciar sesión
 1. Leer docs/project_state.md (obligatorio, siempre).
-2. Verificar contador de auditoría. Si >= 3 HUs, proponer auditoría
-   (Decidora de Verdad) antes de tomar tarea nueva.
-3. NO leer logbooks/ completa — solo docs/logbooks/00_index.md
+2. Correr logsayer check (mecánico, barato, y reporta
+   documentos sin ubicar en inbox/).
+3. Verificar contador de auditoría. Si >= 3 HUs, proponer
+   auditoría (Decidora de Verdad) antes de tomar tarea nueva.
+4. NO leer logbooks/ completa — solo docs/logbooks/00_index.md
    bajo demanda.
 
 ## Durante la sesión
@@ -166,6 +189,16 @@ flowchart TD
 - Trabajar cada HU leyendo solo su carpeta en 04_user_stories/.
 - Decisión de arquitectura nueva → candidata a entrada de logbook,
   nunca se escribe directo en el estado.
+
+## Documentos entrantes (inbox/)
+- Si logsayer check lista archivos en inbox/, delegar al subagente
+  Mentat: él decide la capa (logsayer doc route) y crea el documento
+  (logsayer doc new). No derivar el contenido en el estado.
+- Si el humano entrega un documento que NO es del proyecto (entrega,
+  contrato, acta), no ubicarlo a mano:logsayer inbox add <archivo>.
+  No mover archivos del proyecto ni código.
+- El CLI no redacta contenido de Capa 1 desde el archivo: mueve y
+  nombra; el Mentat deriva.
 
 ## Al cerrar sesión o commit (requiere aprobación previa)
 - Actualizar project_state.md (snapshot, no acumulativo).
@@ -177,8 +210,9 @@ flowchart TD
 - Disparador: contador >= 3 HUs cerradas.
 - Compara 04_user_stories/ vs código real.
 - Resultado en 06_audits/audit_<fecha>.md.
-- Resetea contador tras aprobación.
+- Resetea el contador tras aprobación.
 ```
+
 
 ---
 
@@ -192,13 +226,16 @@ flowchart TD
 | **3 — Adaptadores multi-agente** | opencode y Claude Code primero (entorno propio), luego los demás por demanda — cada adaptador es un wrapper fino al motor único |
 | **4 — Validación** | `doctor`/`check`, detección de capas mezcladas |
 | **5 — Documentación y publicación** | README con disclaimer, PyPI, MIT, casos de ejemplo |
-| **6 — Comunidad** | Presets, más agentes según demanda |
+| **6 — Ingreso de documentos** | `inbox/` + `inbox add`, `doc route`, `doc new` con header estándar, check `bandeja_entrada`, Routing table en README |
+| **7 — Comunidad** | Presets, más agentes según demanda |
 
 ---
 
 ## 10. Riesgos conocidos de diseño
 
 - **No repetir el "sea of markdown" de Spec Kit**: cada comando debe generar lo mínimo indispensable, no documentos de cientos de líneas por defecto. El límite de tamaño del logbook ya está definido — aplicar el mismo criterio a los templates de HU.
+- **`inbox/` puede volverse un cajón de sastre**: una staging area que nadie procesa es peor que no tenerla, porque aparenta estar ordenada. Dos contramedidas ya incluidas: no se versiona (no es un lugar donde buscar información) y `check` avisa cuando un documento lleva más de `inbox_max_age_days` sin ser ubicado. El umbral es un aviso, no un borrado — borrar archivos del usuario nunca es responsabilidad del CLI.
+- **La detección de "documentos huérfanos" por mención no es mecánica**: el estado es prosa libre, así que un check que busca "el nombre del doc aparece en el estado o en un logbook" produce falsos positivos permanentes en `01_global/` (visión, alcance — nunca se citan) y deja de ser determinista, que es la promesa de un bot. La coherencia entre Capa 1 y Capa 2 es trabajo de la Decidora (§13.4.2), no de Suk.
 - **Determinismo del audit**: como la auditoría HU-vs-código la hace un subagente (no el CLI directamente), el resultado depende del agente que la ejecute. El CLI debe generar la estructura del reporte y el prompt de auditoría, no prometer resultado determinístico — ser honesto sobre esto en la documentación.
 - **No mezclar capas en el propio código del CLI**: la tentación de meter lógica de negocio del framework dentro de `AGENTS.md` generado (en vez de dejarla en el core del CLI) rompe el principio de single source of truth.
 
@@ -226,9 +263,9 @@ Python 3.11+ · Typer (CLI) · Jinja2 (templates) · TOML (config) · distribuci
 
 **Rol canon:** computadoras humanas entrenadas en cálculo, análisis, estrategia y procesamiento de información — la respuesta de la humanidad a la prohibición del pensamiento artificial.
 
-**Rol en el framework:** define *qué* se construye y *cómo se valida*. Contiene historias de usuario, casos de uso, modelos de datos, decisiones técnicas y reglas de negocio. Es la capa normativa — el contrato de comportamiento del sistema.
+**Rol en el framework:** define *qué* se construye y *cómo se valida*. Contiene historias de usuario, casos de uso, modelos de datos, decisiones técnicas y reglas de negocio. Es la capa normativa — el contrato de comportamiento del sistema. También es quien deriva el contenido de los documentos que llegan por `inbox/` (spec §3).
 
-**Comando:** `logsayer mentat spec new <hu>` · alias `logsayer spec new`
+**Comandos:** `logsayer mentat spec new <hu>` · alias `logsayer spec new` — `logsayer mentat doc route [<archivo>]` · alias `logsayer doc route` — `logsayer mentat doc new <capa> <nombre>` · alias `logsayer doc new`
 
 ---
 
@@ -260,7 +297,7 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 **Rol canon:** médicos de la Escuela Suk, con condicionamiento imperial que garantiza objetividad absoluta — diagnóstico protocolizado, basado en síntomas medibles, sin intervención de juicio subjetivo.
 
-**Rol en el framework:** chequeo estructural automatizado — tests, linters, validación de que la estructura de carpetas y capas no se mezcló. Detecta si el "paciente" (el proyecto) está sano según parámetros objetivos y medibles.
+**Rol en el framework:** chequeo estructural automatizado — tests, linters, validación de que la estructura de carpetas y capas no se mezcló. Detecta si el "paciente" (el proyecto) está sano según parámetros objetivos y medibles. Es también el canal por el que el proyecto se entera de que hay documentos sin ubicar en `inbox/`: ese reporte es un `warn`, no un `fail`, porque una bandeja con pendientes es un proyecto sano con un pendiente, no un paciente enfermo.
 
 **Comando:** `logsayer suk doctor` · alias `logsayer check`
 
@@ -290,4 +327,6 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 ## 14. Próximo paso concreto
 
-Fase 0/1: crear el repo, `pyproject.toml` con Typer, definir el schema completo de `logsayer.toml`, y el primer `init` funcional. Dogfooding desde el commit uno: la primera HU documentada con este mismo sistema es "implementar `logsayer init`".
+Fase 6 — Ingreso de documentos: `inbox/` + `inbox add`, tabla de ruteo en `core/routing.py` expuesta por `doc route`, `doc new` con header estándar, check `bandeja_entrada` y la sección "Documentos entrantes" en el `AGENTS.md` generado. Ver `docs/04_user_stories/HU-06/` a HU-09 para el desglose y los criterios de aceptación.
+
+Pendientes declarados, en orden: publicar en PyPI, fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad).

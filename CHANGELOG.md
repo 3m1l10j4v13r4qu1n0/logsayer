@@ -4,6 +4,34 @@ Todos los cambios notables de logsayer quedan documentados acá, por versión, e
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-25
+
+Fase 6 del roadmap: **ingreso de documentos**. El feedback de usabilidad del 2026-09-25 señaló un problema de diseño, no de fricción: un documento que entra al proyecto no tenía puerta de entrada, y `logsayer check` no iba a señalarlo. Ahora hay bandeja, ruteo explícito y un ejemplo público.
+
+### Added
+- **`logsayer inbox add <archivo>`**: mueve un documento externo a `inbox/` (staging, hermano de `docs/`, no es una capa) e informa el siguiente paso. Archiva en `inbox/_done/`, nunca borra.
+- **`logsayer doc route [archivo]`**: tabla explícita "dónde va mi documento" (`core/routing.py`). Con argumento, devuelve los **candidatos** y decide solo con señal inequívoca (extensión no markdown, o HU en el nombre); sin argumento, muestra la tabla completa.
+- **`logsayer inbox`** sin subcomando lista los documentos esperando ubicación.
+- `doc route` detecta el reenvío de un documento que ya existe en Capa 1 y avisa que no se duplique.
+- **`logsayer doc new <capa> <nombre> [--from <origen>]`**: scaffoldea documentos de Capa 1 (`global` / `technical`) desde el template `doc.md.j2`, registra la procedencia en `## Fuente` y archiva el original.
+- **Alias `logsayer mentat`**: subagente que decide la capa del documento entrante (adaptadores opencode y Claude, con permisos actualizados).
+- **Check `bandeja_entrada`**: documentos sin ubicar o con antigüedad mayor a `inbox_max_age_days` (default 14).
+- **Check `header_capa1`**: exige `# Título`, `Fecha: YYYY-MM-DD · Estado: …` y `## Resumen` en `01_global/` y `02_technical/`.
+- **Check `estado_al_dia`**: avisa cuando un documento de Capa 1 tiene fecha de versión más nueva que `project_state.md`.
+- **Nivel `warn` en `CheckResult`**: los avisos se muestran pero no rompen el flujo (`logsayer check` sale con 0).
+- **Sección "Incoming documents" en el README** y transcript real en `examples/hello-logsayer/README.md` (`inbox add` → `check` → `doc route` → `doc new`).
+
+### Changed
+- `CheckResult.ok` pasa a ser propiedad de `status: Literal["ok", "warn", "fail"]`; solo `fail` produce exit code 1.
+- `capas_mezcladas` ahora sugiere destino (`sugerido: …`) además de señalar el archivo.
+- **El CLI propone la capa, no la decide.** Se eliminó el default a `docs/02_technical/`: un `.md` entrante que en realidad es visión de producto ya no termina en la carpeta técnica por accidente. El subagente Mentat elige entre los candidatos.
+- `scaffold()` crea `inbox/` con su propio `.gitignore`.
+- `logsayer.toml` acepta `inbox_max_age_days`.
+- Los documentos de Capa 1 del propio repo (`mission.md`, `decisions.md`, `tech-stack.md`) se normalizaron con el header estándar.
+
+### Fixed
+- El `.gitignore` de `inbox/` ya no se ignora a sí mismo (`*` + `!.gitignore`).
+
 ## [0.6.0] — 2026-09-24
 
 ### Added

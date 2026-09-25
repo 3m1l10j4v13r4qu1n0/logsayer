@@ -38,8 +38,14 @@ Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbral
 
 ### Al iniciar sesión
 1. Leer `docs/project_state.md` (Capa 2, obligatorio, siempre).
-2. Si el contador de HUs cerradas desde la última auditoría es >= 3 HUs, proponer auditoría (Decidora de Verdad) antes de tomar tarea nueva.
-3. NO leer `docs/logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
+2. Correr `logsayer check` (mecánico, read-only) y atender los avisos antes de tomar tarea.
+3. Si el contador de HUs cerradas desde la última auditoría es >= 3 HUs, proponer auditoría (Decidora de Verdad) antes de tomar tarea nueva.
+4. NO leer `docs/logbooks/` completa — solo `docs/logbooks/00_index.md` bajo demanda.
+
+### Documentos entrantes
+- Si el humano te entrega o menciona un documento externo (`.md`, `.pdf`, `.docx`, `.txt`) que no pertenece a este repo: recordarle `logsayer inbox add <archivo>` y delegar la ubicación al subagente **Mentat**. No moverlo, leerlo ni deducir su capa vos.
+- La decisión de capa la toma Mentat; vos invocás `logsayer doc route` / `logsayer doc new`.
+- Los `.md` en la raíz NO se escanean: son invisibles para `logsayer check` a propósito. No los crees en este repo.
 
 ### Durante la sesión
 - Si el uso de contexto supera el 70%, proponer cierre de sesión antes de tomar más tareas.
@@ -60,8 +66,9 @@ Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbral
 ## Estado actual
 - Dogfooding del marco activo: logsayer se gobierna a sí mismo (docs/ bootstrappeado con `init --here` en modo adopt, HUs reales HU-01..05 en `docs/04_user_stories/`, logbooks por fase, auditoría 2026-09-24 aprobada y contador reseteado).
 - Versión actual: `0.6.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`). El modo adopt de `init --here` (spec §5) cerró la deuda de repositorios existentes, verificado con tests + check + fremen.
-- Fases 0-5 del roadmap cerradas. Pendientes: publicar en PyPI (token de `3m1l10j4v13r4qu1n0`), fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 6 (comunidad: presets, más agentes).
+- Fases 0-5 del roadmap cerradas. Fase 6 (ingreso de documentos: `inbox/`, `inbox add`, `doc route`, `doc new`) implementada y verificada. Pendientes: publicar en PyPI (el token va por variable de entorno, no en el repo), fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes).
 - `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.6.0`).
 
 ## Memoria del proyecto
 - [x] Dogfooding del propio repo: `docs/` bootstrappeado sobre sí mismo; `docs/project_state.md` (Capa 2), logbooks por fase (Capa 3) y auditoría (Capa 4) mantenidos en el marco de sesiones.
+- [x] Checkdogfooding: el propio `logsayer check` corre contra este repo; los checks de Capa 1 (`header_capa1`, `estado_al_dia`) son debt detectors reales, no decorativos.

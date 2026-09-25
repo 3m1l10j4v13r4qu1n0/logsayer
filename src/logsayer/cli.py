@@ -10,7 +10,16 @@ import typer
 from logsayer.adapters.generate import generate_adapters
 from logsayer.adapters.registry import AgentError, resolve_adapter
 from logsayer.config import LogsayerConfig
-from logsayer.core import audit, fremen, logbook, project, specs, suk
+from logsayer.core import (
+    audit,
+    fremen,
+    inbox,
+    logbook,
+    project,
+    routing,
+    specs,
+    suk,
+)
 from logsayer.core.checks import CheckResult
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
 from logsayer.core.project import project_name
@@ -100,6 +109,53 @@ def agent_add(
 app.add_typer(agent_typer, name="agent")
 
 
+inbox_typer = typer.Typer(
+    help="Bandeja de entrada de documentos externos (punto de entrada de Capa 1).",
+    no_args_is_help=False,
+)
+
+
+@inbox_typer.callback(invoke_without_command=True)
+def inbox_list(ctx: typer.Context) -> None:
+    """Sin subcomando, lista lo que está esperando ubicación."""
+    if ctx.invoked_subcommand is not None:
+        return
+    try:
+        root = require_logsayer_root(Path.cwd())
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    items = inbox.pending(root)
+    if not items:
+        typer.echo("Bandeja vacía: no hay documentos esperando ubicación.")
+        return
+    typer.echo(f"Bandeja — {len(items)} documento(s) esperando ubicación:")
+    for path in items:
+        typer.echo(f"  - {path.relative_to(root)}")
+    typer.echo("siguiente: logsayer doc route <archivo>  (Mentat decide la capa)")
+
+
+@inbox_typer.command("add")
+def inbox_add(
+    path: Annotated[
+        str,
+        typer.Argument(help="Archivo a mover a inbox/ (ej: ~/Downloads/contrato.pdf)."),
+    ],
+) -> None:
+    """Mueve un documento externo a inbox/ y deja constancia del próximo paso."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        target, warning = inbox.add(root, path)
+    except (ProjectRootError, inbox.InboxError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Movido a {target.relative_to(root)}")
+    if warning:
+        typer.echo(f"Aviso: {warning}")
+    typer.echo("Siguiente: logsayer doc route " + str(target.relative_to(root)))
+
+
+app.add_typer(inbox_typer, name="inbox")
+
+
 spec_typer = typer.Typer(
     help="Historias de usuario (Capa 1).",
     no_args_is_help=True,
@@ -120,6 +176,102 @@ def spec_new(
 
 
 _register_with_alias("mentat", spec_typer, "spec")
+
+
+doc_typer = typer.Typer(
+    help="Documentos de Capa 1 transversales (no-HU): ruteo y creación.",
+    no_args_is_help=True,
+)
+
+
+@doc_typer.command("route")
+def doc_route(
+    path: Annotated[
+        str | None,
+        typer.Argument(help="Archivo a rutear. Sin argumento, imprime la tabla."),
+    ] = None,
+) -> None:
+    """Imprime a qué capa va un documento. No escribe nada (spec §3)."""
+    if path is None:
+        typer.echo("¿Dónde va mi documento?\n")
+        typer.echo(routing.to_markdown())
+        typer.echo(f"\n{routing.NARRATIVE_NOTE}")
+        typer.echo(
+            "\nEl CLI no redacta el contenido: elige la capa y creá el documento "
+            "con el comando de la fila."
+        )
+        return
+    try:
+        root = require_logsayer_root(Path.cwd())
+        verdict = routing.resolve(root, path)
+    except (ProjectRootError, routing.RoutingError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if verdict.is_decided:
+        assert verdict.decided is not None
+        route = verdict.decided
+        typer.echo(f"→ capa:      {route.destination}")
+        typer.echo(f"→ versión:   {route.versioned}")
+        typer.echo(f"→ crear:     {route.command}")
+        if route.note:
+            typer.echo(f"→ nota:      {route.note}")
+        typer.echo(f"→ por qué:   {verdict.reason}")
+        return
+    if verdict.duplicate is not None:
+        typer.echo(f"→ sin destino: {verdict.reason}")
+        return
+    typer.echo(f"→ sin decisión automática. {verdict.reason}")
+    if verdict.hint:
+        typer.echo(f"→ pista:      {verdict.hint}")
+    typer.echo("\nCandidatos:")
+    for route in verdict.candidates:
+        typer.echo(f"  · {route.destination} — crear con: {route.command}")
+    typer.echo(
+        "\nElegí la fila que corresponde y creá el documento con ese comando. "
+        "Si ninguna aplica, la fila es 'El por qué o el cómo de lo que ya se "
+        "hizo' (bitácora)."
+    )
+
+
+@doc_typer.command("new")
+def doc_new(
+    layer: Annotated[
+        str,
+        typer.Argument(help="Capa 1 de destino: global | technical."),
+    ],
+    name: Annotated[
+        str,
+        typer.Argument(help="Nombre del documento en snake_case (ej: contrato_api)."),
+    ],
+    from_path: Annotated[
+        str | None,
+        typer.Option(
+            "--from",
+            help="Documento de origen; se archiva en inbox/_done/ y queda su "
+            "procedencia en el bloque '## Fuente'.",
+        ),
+    ] = None,
+) -> None:
+    """Crea un documento de Capa 1 con header estándar. Para HUs: spec new."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        target, archived = specs.create_doc(root, layer, name, from_path)
+    except (
+        ProjectRootError,
+        inbox.InboxError,
+        routing.RoutingError,
+        specs.SpecError,
+    ) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Documento creado en {target.relative_to(root)}")
+    if archived is not None:
+        typer.echo(f"Origen archivado en {archived.relative_to(root)}")
+        typer.echo(
+            "El contenido lo deriva el subagente Mentat: "
+            "el CLI solo lo scaffoldeó."
+        )
+
+
+_register_with_alias("mentat", doc_typer, "doc")
 
 
 state_typer = typer.Typer(
@@ -247,14 +399,20 @@ _register_with_alias("truthsayer", audit_typer, "audit")
 
 
 def _render_checks(title: str, results: list[CheckResult]) -> None:
-    """Imprime el reporte de chequeos y sale con código 1 si algo falló."""
+    """Imprime el reporte de chequeos y sale con código 1 si algo falló.
+
+    Los `warn` se muestran pero no alteran el exit code: son pendientes, no
+    fallas.
+    """
     typer.echo(f"{title}\n")
     failed = 0
+    warned = 0
     for result in results:
-        mark = "✔" if result.ok else "✘"
-        typer.echo(f"{mark} {result.name}: {result.detail or 'OK'}")
-        if not result.ok:
+        typer.echo(f"{result.mark} {result.name}: {result.detail or 'OK'}")
+        if result.status == "fail":
             failed += 1
+        elif result.status == "warn":
+            warned += 1
     typer.echo()
     if failed:
         message = (
@@ -263,6 +421,12 @@ def _render_checks(title: str, results: list[CheckResult]) -> None:
         )
         typer.echo(message)
         raise typer.Exit(code=1)
+    if warned:
+        typer.echo(
+            f"Estado: sano con {warned} chequeo(s) en aviso. "
+            "No bloquea, pero atendelos."
+        )
+        return
     typer.echo("Estado: sano.")
 
 

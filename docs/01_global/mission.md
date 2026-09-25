@@ -1,5 +1,12 @@
 # Misión y alcance — logsayer
 
+Fecha: 2026-09-25 · Estado: vigente
+
+## Resumen
+
+Qué resuelve logsayer y hasta dónde llega: el problema de continuidad entre sesiones, su
+posicionamiento frente a Spec Kit, y los límites explícitos de lo que no hace.
+
 **Mensaje de una línea:** *Spec Kit te dice qué construir. logsayer te dice dónde estás parado, cómo llegaste, y si lo que construiste sigue siendo lo que dijiste que ibas a construir.*
 
 ## Problema

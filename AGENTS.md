@@ -12,6 +12,29 @@ CLI open source en Python que scaffoldea y coordina un sistema de 5 capas docume
 - Lint/formato: `ruff check src tests`
 - Tipado: `mypy src` (strict)
 
+## Flujo de git (checklist exacto)
+Lo que sigue es lo único que se agrega a la regla global de git: el ciclo y los comandos de este repo. Las ramas, los conventional commits en español y la prohibición de commitear directo en `main`/`develop` se rigen por `~/.config/opencode/rules/git.md`, no se repiten acá.
+
+### Ciclo obligatorio (PR por feature)
+1. `git checkout develop && git pull`
+2. `git checkout -b feature/<tema>` (o `fix/<tema>`; una rama = una HU/tarea)
+3. Trabajar y commitear (tema por commit). Antes de abrir el PR, integrar develop: `git fetch && git merge origin/develop` **dentro de la rama** y resolver los conflictos ahí.
+4. `git push -u origin <rama>`
+5. `gh pr create --base develop --head <rama> --title "..." --body "..."`
+6. Merge a `develop` solo con `gh pr merge --merge <n>` (nunca squash) y **solo con aprobación explícita del usuario**. Lo mismo para push, PR y tag: sin aprobación, no se ejecuta.
+7. Release: PR `develop` → `main` + tag semver en el commit de release.
+
+### Checklist pre-merge (los tres, en verde)
+- `python -m pytest -q`
+- `ruff check src tests`
+- `mypy src`
+
+Divergencia justificada respecto del checklist genérico global: el proyecto no usa `black` (el formateo es `ruff`, y `black` no está en las dev dependencies de `pyproject.toml`). En consecuencia, `ruff format` es la única verificación de formato.
+
+### Limpieza
+- `git branch -d <rama>` para las locales ya mergeadas; remotas con `git branch -r --merged develop` y después `git push origin --delete <rama>`.
+- Nunca borrar `main` ni `develop`.
+
 ## Setup / gotchas
 - Fuente de verdad absoluta: `logsayer_especificacion_maestra.md`. Reemplaza y consolida toda decisión previa (capas, roadmap, tema Dune, bot vs subagente, umbrales, estrategia multi-agente).
 - `prompts_bootstrap_framework.md` es el flujo de prompts de bootstrap: define la constitución y las features del propio CLI.
@@ -65,9 +88,9 @@ Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbral
 
 ## Estado actual
 - Dogfooding del marco activo: logsayer se gobierna a sí mismo (docs/ bootstrappeado con `init --here` en modo adopt, HUs reales HU-01..05 en `docs/04_user_stories/`, logbooks por fase, auditoría 2026-09-24 aprobada y contador reseteado).
-- Versión actual: `0.6.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`). El modo adopt de `init --here` (spec §5) cerró la deuda de repositorios existentes, verificado con tests + check + fremen.
-- Fases 0-5 del roadmap cerradas. Fase 6 (ingreso de documentos: `inbox/`, `inbox add`, `doc route`, `doc new`) implementada y verificada. Pendientes: publicar en PyPI (el token va por variable de entorno, no en el repo), fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes).
-- `main` tiene solo el bootstrap; feature branches convergen en `develop`; releases con tag semver (`v0.1.0`..`v0.6.0`).
+- Versión actual: `0.7.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`; tag `v0.7.0` pendiente en el próximo release). El modo adopt de `init --here` (spec §5) cerró la deuda de repositorios existentes, verificado con tests + check + fremen.
+- Fases 0-6 del roadmap cerradas (fase 6: ingreso de documentos — `inbox/`, `inbox add`, `doc route`, `doc new` — mergeada en `develop` el 2026-09-27). Pendientes: publicar en PyPI (el token va por variable de entorno, no en el repo), fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes).
+- `main` tiene el bootstrap y el changelog; `develop` concentra el trabajo; releases con tag semver (`v0.1.0`..`v0.6.0`). Desde 2026-09-27 todo feature entra a `develop` por PR (flujo de la regla global, ver §Flujo de git).
 
 ## Memoria del proyecto
 - [x] Dogfooding del propio repo: `docs/` bootstrappeado sobre sí mismo; `docs/project_state.md` (Capa 2), logbooks por fase (Capa 3) y auditoría (Capa 4) mantenidos en el marco de sesiones.

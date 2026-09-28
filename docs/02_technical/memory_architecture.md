@@ -1,3 +1,8 @@
+---
+tags:
+  - memoria
+  - retrieval
+---
 # Arquitectura de memoria
 
 > Documento de Capa 1 — Especificación. Completa solo lo indispensable (spec §10).
@@ -95,16 +100,35 @@ mantenerlas: si faltan, el índice sigue siendo correcto.
 04_user_stories/HU-09/README.md                   · nivel 2 · vigente · 2026-09-27 · checks, capa-1
 ```
 
+La implementación (HU-10) cierra tres detalles que el ejemplo deja abiertos:
+
+- **Orden:** por `(nivel, ruta)`. Es lo que hace que las líneas se lean como capas
+  y no como un `ls`.
+- **Metadata ausente:** `—`. Las capas de proceso, metodología, auditoría y
+  bitácora no llevan el header estándar, y el índice no inventa un estado para
+  ellas.
+- **Nivel de las capas no enumeradas:** `03_process/`, `05_agile_methodology/`,
+  `06_audits/` y `logbooks/` son **nivel 3**. La numeración es "distancia a la
+  especificación", y esas capas no compiten por ser la fuente de verdad de una
+  HU. El nivel nunca se escribe en el documento: se deriva de la ruta.
+
+Este documento declara su propio frontmatter porque la CLI lo scaffoldea y el
+Mentat lo ajusta (D8): es el ejemplo ejecutable del contrato, no una excepción
+a él.
+
 ### Comandos
 
 ```bash
-logsayer memory index                              # regenera el índice
-logsayer memory search "checks de capa 1"          # candidatos ordenados
-logsayer memory search "inbox" --capa technical    # con filtro de capa
-logsayer memory status                             # qué indexa, cuándo quedó viejo
+logsayer memory index                              # regenera el índice      (HU-10)
+logsayer memory status                             # qué indexa, con cuántas tags (HU-10)
+logsayer memory search "checks de capa 1"          # candidatos ordenados     (HU-11)
+logsayer memory search "inbox" --capa technical    # con filtro de capa       (HU-11)
 ```
 
-Ambos con su alias de rol: `logsayer memory ...` ≡ el subagente que los consume.
+Ambos con su alias de rol: `logsayer memory ...` ≡ el subagente que los consume
+(`index` y `status` cuelgan del Navegante; `search`, en HU-11, lo consumen
+Mentat y Truthsayer). `status` no dictamina frescura —eso es `indice_al_dia` en
+HU-11—: informa qué hay.
 
 ### Reparto por capa y subagente
 
@@ -142,8 +166,8 @@ atajo de lectura, no un recorte de alcance.
 3. **Índice en la raíz de `docs/` sin exención.** El origen propone
    `docs/00_memory_index.md` sin advertir que dispara **fail** en `capas_mezcladas`:
    el check recorre `docs/**/*.md` y solo exime las capas más el estado
-   (`src/logsayer/core/suk.py:150-155`). Se agrega la exención, con el mismo patrón que
-   ya exime `project_state.md`.
+   (`check_mixed_layers`, en `src/logsayer/core/suk.py`). Se agrega la exención,
+   con el mismo patrón que ya exime `project_state.md`.
 4. **13 fases de roadmap.** El origen numera las fases contra un README viejo (su fase 6
    es "presets y nuevos agentes", cuando la 6 real es ingreso de documentos). Acá es
    **una** fase — la 8, después de la 7 (comunidad) — desglosada en dos HUs.
@@ -168,5 +192,5 @@ atajo de lectura, no un recorte de alcance.
 
 | HU | Alcance |
 |---|---|
-| HU-10 | Frontmatter `tags` + `docs/00_memory_index.md` + exención en `capas_mezcladas` |
+| HU-10 | Frontmatter `tags` en `doc.md.j2` + `docs/00_memory_index.md` + `memory index` / `memory status` + exención en `capas_mezcladas` + `header_capa1` tolerante del frontmatter |
 | HU-11 | `memory search` + `indice_al_dia` + la Decidora lo consume |

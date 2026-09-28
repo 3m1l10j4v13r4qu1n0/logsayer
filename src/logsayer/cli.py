@@ -15,6 +15,7 @@ from logsayer.core import (
     fremen,
     inbox,
     logbook,
+    memory,
     project,
     routing,
     specs,
@@ -294,6 +295,45 @@ def state_show() -> None:
 
 
 _register_with_alias("navigator", state_typer, "state")
+
+
+memory_typer = typer.Typer(
+    help="Índice de memoria: navegación transversal sobre docs/ (no es una capa).",
+    no_args_is_help=True,
+)
+
+
+@memory_typer.command("index")
+def memory_index() -> None:
+    """Regenera docs/00_memory_index.md desde los documentos reales."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        index, count = memory.render_index(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(
+        f"Índice actualizado en {index.relative_to(root)} ({count} documentos)"
+    )
+
+
+@memory_typer.command("status")
+def memory_status() -> None:
+    """Inventario del índice: qué indexa, cuántas tags y cuándo se generó."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        report = memory.status(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("Índice de memoria")
+    for label, value in report.rows():
+        typer.echo(f"  {label}: {value}")
+    if report.exists:
+        typer.echo("\nRegenerar con: logsayer memory index")
+    else:
+        typer.echo("\nTodavía no existe. Generalo con: logsayer memory index")
+
+
+_register_with_alias("navigator", memory_typer, "memory")
 
 
 log_typer = typer.Typer(

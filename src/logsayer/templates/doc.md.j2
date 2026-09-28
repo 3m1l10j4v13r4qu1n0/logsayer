@@ -1,4 +1,10 @@
-# {{ title }}
+{% if tags %}---
+# Tags del índice de memoria (D13): el CLI las scaffoldea, el Mentat ajusta.
+tags:
+{% for tag in tags %}  - {{ tag }}
+{% endfor %}---
+
+{% endif %}# {{ title }}
 
 > Documento de Capa 1 — Especificación. Completa solo lo indispensable (spec §10).
 

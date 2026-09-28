@@ -6,7 +6,7 @@
 
 Fase 8 — memoria seleccionable
 
-Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, implementación en HU-10 y HU-11.
+Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, HU-10 implementada en la rama `feature/hu-10-indice-memoria` (índice generado + frontmatter `tags`, pendiente de PR a `develop`); HU-11 (retrieval + `indice_al_dia`) es lo que sigue en la fase.
 
 > La primera línea de esta sección es el identificador de la fase: `logsayer log add` la
 > convierte en slug para nombrar el logbook de la fase. El detalle va en el párrafo de
@@ -30,9 +30,11 @@ Pendientes sin dependencia de la 8: publicar 0.7.0 (tag `v0.7.0`), fase 3 restan
 - D12 — El grafo de memoria es capa transversal de navegación, no una sexta capa: indexa las cinco, no compite con ellas.
 - D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
 - D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.
+- D15 — El nivel es distancia a la especificación, no un grado de importancia: las capas que no compiten por ser la fuente de verdad de una HU (`03_process/`, `05_agile_methodology/`, `06_audits/`, `logbooks/`) son todas nivel 3, y el nivel se deriva de la ruta, nunca se escribe en el documento.
+- D16 — El frontmatter es preámbulo, no contenido: el header estándar se valida igual, después del bloque. Un `---` sin pareja no rompe la indexación (el documento entra sin tags) pero el Suk sí lo señala como header faltante: perdonar eletadata nunca vale hidear metadata.
 
 ## HUs cerradas desde la última auditoría
 
-0
+1
 
-Auditoría del 2026-09-27 aprobada y contador reseteado (HU-06..HU-09: 3 de 4 cumplen, HU-07 parcial con 3 acciones pendientes). El umbral vuelve a ser 3 HUs.
+Auditoría del 2026-09-27 aprobada y contador reseteado. Desde entonces cerró HU-10 (índice de memoria). El umbral sigue siendo 3 HUs.

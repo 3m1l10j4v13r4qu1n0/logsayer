@@ -329,4 +329,4 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 Fase 6 — Ingreso de documentos: `inbox/` + `inbox add`, tabla de ruteo en `core/routing.py` expuesta por `doc route`, `doc new` con header estándar, check `bandeja_entrada` y la sección "Documentos entrantes" en el `AGENTS.md` generado. Ver `docs/04_user_stories/HU-06/` a HU-09 para el desglose y los criterios de aceptación.
 
-Pendientes declarados, en orden: publicar en PyPI, fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad).
+Pendientes declarados, en orden: publicar 0.7.0 (0.6.0 ya está en PyPI desde el 2026-09-25), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad).

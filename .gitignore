@@ -1,4 +1,8 @@
+# Feedback de usabilidad: entra al repo, se lee, y se queda afuera del historial.
+# El framework no escanea la raíz (spec §3), así que el archivo es invisible
+# para `logsayer check` y no debe trackearse.
 feelback_agente.md
+feelback_usabilidad_*.md
 
 # Python
 __pycache__/

@@ -327,6 +327,8 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 ## 14. Próximo paso concreto
 
-Fase 6 — Ingreso de documentos: `inbox/` + `inbox add`, tabla de ruteo en `core/routing.py` expuesta por `doc route`, `doc new` con header estándar, check `bandeja_entrada` y la sección "Documentos entrantes" en el `AGENTS.md` generado. Ver `docs/04_user_stories/HU-06/` a HU-09 para el desglose y los criterios de aceptación.
+Fase 6 — Ingreso de documentos (**cerrada**): `inbox/` + `inbox add`, tabla de ruteo en `core/routing.py` expuesta por `doc route`, `doc new` con header estándar, check `bandeja_entrada` y la sección "Documentos entrantes" en el `AGENTS.md` generado. Ver `docs/04_user_stories/HU-06/` a HU-09 para el desglose y los criterios de aceptación.
 
-Pendientes declarados, en orden: publicar 0.7.0 (0.6.0 ya está en PyPI desde el 2026-09-25), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad).
+Fase 8 — Memoria seleccionable (**en curso**): índice generado sobre `docs/` (`logsayer memory index`), contrato de frontmatter reducido a `tags` (D13) y retrieval determinista (`logsayer memory search`). El grafo es capa transversal de navegación, no una sexta capa (D12); el retrieval ordena la lectura pero nunca recorta el alcance de la auditoría (D14). Diseño en `docs/02_technical/memory_architecture.md`; desglose en HU-10 (índice) y HU-11 (retrieval).
+
+Pendientes declarados, en orden: publicar 0.7.0 (0.6.0 ya está en PyPI desde el 2026-09-25), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad), fase 9 (frontmatter extendido, solo si duele).

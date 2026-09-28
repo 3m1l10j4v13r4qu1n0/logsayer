@@ -18,4 +18,4 @@
 ## Log
 
 - `2026-09-24` — merge de fase 5 en `develop` (`d23425f`). Bump a `v0.5.0`.
-- Pendiente: publicar en PyPI (requiere token de `3m1l10j4v13r4qu1n0`), vía `uv publish`/`twine`.
+- `2026-09-25` — publicación efectiva en PyPI: `logsayer` 0.6.0 vía `uv publish`, verificado contra la API de PyPI. El token de PyPI va por variable de entorno; el string que este documento llamaba "token" era el usuario de GitHub, no una credencial.

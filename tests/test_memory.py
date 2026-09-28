@@ -310,7 +310,7 @@ def test_search_ranks_the_document_that_declares_the_tag(cwd_project: Path) -> N
         "02_technical/motor_de_memoria.md"
     ]
     assert hits[0].matched == ("memoria",)
-    assert hits[0].score == memory._EXACT
+    assert hits[0].score == 2  # un acierto exacto, ni más ni menos
 
 
 def test_search_breaks_ties_by_level_then_path(cwd_project: Path) -> None:

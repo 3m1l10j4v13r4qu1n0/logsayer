@@ -48,3 +48,15 @@ El motor no redacta contenido ni convierte formatos. `doc new` scaffoldea el doc
 ## D10. El CLI propone la capa, el subagente la decide (spec §3)
 
 `doc route <archivo>` devuelve filas candidatas y decide solo con señal inequívoca: extensión no markdown, o una HU declarada en el nombre. La primera implementación clasificaba por palabras del nombre y, ante lo desconocido, devolvía `docs/02_technical/` por defecto. Se descartó: un `.md` de visión de producto terminado en la carpeta técnica sin que nadie lo notara es exactamente el tipo de error que el marco de 5 capas existe para evitar (spec §2). Además ahora detecta el reenvío de un documento que ya existe y avisa que no se duplique. *Discusión cerrada con el humano el 2026-09-25.*
+
+## D12. El grafo es capa transversal, no una sexta capa
+
+La memoria seleccionable (fase 8) no agrega una capa: agrega un índice que navega las que ya existen. El diseño viene de un feedback externo que proponía indexar las capas con un grafo de `nivel`/`peso`/`relaciones` y 13 fases de roadmap. Se conserva la idea de la separación entre memoria estructural (dónde buscar) y memoria documental (qué dice), y se descarta la sextificación. Motivo: una sexta capa sería un segundo sistema de documentación compitiendo con las otras cinco, y `capas_mezcladas` —la regla de oro de la spec §2— existe justamente para que cada documento tenga un dueño. El grafo entonces es un artefacto derivado, generado por el CLI, que no se edita a mano. *Referencia: `docs/02_technical/memory_architecture.md`.*
+
+## D13. Un campo de frontmatter entra solo si un comando lo consume mecánicamente
+
+El frontmatter se limita a `tags`, que consume `memory search`. Descartados: `id`, `capa`, `nivel` y `estado`, porque la ruta y el header estándar ya los dicen y duplicarlos crea dos verdades que divergen el primer día que no coincidan; y `peso` y `relaciones`, porque los escribiría un LLM o un humano a mano y se pudren. El criterio general es el de D9 aplicado al metadato: *lo que nadie lee mecánicamente es decoración*. Consecuencia asumida: el índice se construye con lo determinable (ruta, `## Fuente`, `git log -1`) y las tags iniciales se derivan del nombre del archivo, sin exigir trabajo humano. *Referencia: `docs/02_technical/memory_architecture.md`.*
+
+## D14. El retrieval elige qué leer primero, nunca qué es auditable
+
+La Decidora usa `memory search` para ordenar su arranque, pero el alcance de una auditoría sigue siendo `docs/04_user_stories/` completo. Motivo: si el subgrafo deja afuera un documento relevante, la auditoría pasa por omisión y el marco miente — un fallo silencioso peor que un check en rojo. El índice es un atajo de lectura, no un recorte de alcance. Es la traducción del D5 (el veredicto es del agente, no del CLI) al terreno de la recuperación: el motor acota el **contexto**, nunca el **alcance**. *Referencia: `docs/02_technical/memory_architecture.md`.*

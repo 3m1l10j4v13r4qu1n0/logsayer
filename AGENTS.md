@@ -89,7 +89,9 @@ Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbral
 ## Estado actual
 - Dogfooding del marco activo: logsayer se gobierna a sí mismo (docs/ bootstrappeado con `init --here` en modo adopt, HUs reales HU-01..09 en `docs/04_user_stories/`, logbooks por fase, auditorías 2026-09-24 y 2026-09-27 aprobadas, contador reseteado a 0).
 - Versión actual: `0.7.0` (sync entre `pyproject.toml` y `src/logsayer/__init__.py`; tag `v0.7.0` pendiente en el próximo release). El modo adopt de `init --here` (spec §5) cerró la deuda de repositorios existentes, verificado con tests + check + fremen.
-- Fases 0-6 del roadmap cerradas (fase 6: ingreso de documentos — `inbox/`, `inbox add`, `doc route`, `doc new` — mergeada en `develop` el 2026-09-27). El proyecto ya está publicado en PyPI: `logsayer` 0.6.0 subido el 2026-09-25 (el token va por variable de entorno, nunca en el repo). Pendientes: publicar 0.7.0 con su tag `v0.7.0`, fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda de HU-07 que dejó la auditoría del 2026-09-27.
+- Fases 0-6 del roadmap cerradas (fase 6: ingreso de documentos — `inbox/`, `inbox add`, `doc route`, `doc new` — mergeada en `develop` el 2026-09-27 por el PR #2). El proyecto ya está publicado en PyPI: `logsayer` 0.6.0 subido el 2026-09-25 (el token va por variable de entorno, nunca en el repo).
+- Fase 8 (memoria seleccionable) en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, implementación en HU-10 (índice generado + frontmatter `tags`) y HU-11 (retrieval + check de frescura). El grafo es capa transversal de navegación, no una sexta capa (D12).
+- Pendientes sin dependencia de la 8: publicar 0.7.0 con su tag `v0.7.0`, fase 3 restante (copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda de HU-07 que dejó la auditoría del 2026-09-27.
 - `main` tiene el bootstrap y el changelog; `develop` concentra el trabajo; releases con tag semver (`v0.1.0`..`v0.6.0`). Desde 2026-09-27 todo feature entra a `develop` por PR (flujo de la regla global, ver §Flujo de git).
 
 ## Memoria del proyecto

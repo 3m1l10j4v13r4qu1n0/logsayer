@@ -195,9 +195,9 @@ A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/ad
 
 ## Roadmap
 
-- **0–5 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), opencode/Claude adapters, mechanical validation (`check`, `process check`), docs & publishing.
-- **6 (current):** incoming documents — `inbox/`, `inbox add`, `doc route`, `doc new`. You are here.
+- **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), opencode/Claude adapters, mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
 - **7:** community presets, more agents on demand (copilot, cursor, gemini, hermes).
+- **8 (current):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search`. You are here.
 
 ## Acknowledgment & license
 

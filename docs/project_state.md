@@ -4,9 +4,15 @@
 
 ## Fase actual del roadmap
 
-Fase 6 — Ingreso de documentos (cerrada y mergeada en `develop`; 0.7.0 aún sin publicar)
+Fase 8 — memoria seleccionable
 
-Fases 0 a 6 cerradas. El proyecto ya está publicado en PyPI: `logsayer` 0.6.0 subido el 2026-09-25 (verificado en vivo vía la API de PyPI). Pendientes: publicar 0.7.0 (tag `v0.7.0`), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda que dejó la auditoría del 2026-09-27 en HU-07 (permisos del adaptador de Claude Code + dos criterios de aceptación desactualizados).
+Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, implementación en HU-10 y HU-11.
+
+> La primera línea de esta sección es el identificador de la fase: `logsayer log add` la
+> convierte en slug para nombrar el logbook de la fase. El detalle va en el párrafo de
+> abajo, nunca en esa línea.
+
+Pendientes sin dependencia de la 8: publicar 0.7.0 (tag `v0.7.0`), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda de HU-07 que dejó la auditoría del 2026-09-27 (permisos del adaptador de Claude Code + dos criterios de aceptación desactualizados). La 7 y la 8 no se bloquean entre sí: se pueden ejecutar en cualquier orden.
 
 ## Decisiones activas
 
@@ -21,6 +27,9 @@ Fases 0 a 6 cerradas. El proyecto ya está publicado en PyPI: `logsayer` 0.6.0 s
 - D9 — Los checks de Capa 1 (`header_capa1`, `estado_al_dia`) se validaron contra este mismo repo: fallaron el primer día.
 - D10 — El CLI propone la capa, no la decide: sin default a `02_technical/`; elige Mentat.
 - D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25. El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
+- D12 — El grafo de memoria es capa transversal de navegación, no una sexta capa: indexa las cinco, no compite con ellas.
+- D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
+- D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.
 
 ## HUs cerradas desde la última auditoría
 

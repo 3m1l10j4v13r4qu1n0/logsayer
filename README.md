@@ -158,6 +158,8 @@ A document arrived from another team? See
 | `logsayer doc route [file]` | `logsayer mentat doc route` | 1 | Prints the routing table (or the row for a file) |
 | `logsayer doc new <layer> <name>` | `logsayer mentat doc new` | 1 | Creates a layer-1 document (`--from` archives the source) |
 | `logsayer state show` | `logsayer navigator state show` | 2 | Prints the project snapshot |
+| `logsayer memory index` | `logsayer navigator memory index` | transversal | Regenerates `00_memory_index.md` from the real files |
+| `logsayer memory status` | `logsayer navigator memory status` | transversal | Inventory of the index (what it covers, how many tags) |
 | `logsayer log add "…"` | `logsayer reverend-mother log add` | 3 | Appends a logbook entry (auto-partition) |
 | `logsayer log index` | `logsayer reverend-mother log index` | 3 | Rebuilds `00_index.md` from real files |
 | `logsayer check` | `logsayer suk doctor` | 4 | Mechanical checks: structure, no layer mixing, pending inbox |

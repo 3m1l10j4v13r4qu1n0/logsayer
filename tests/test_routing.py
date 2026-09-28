@@ -92,7 +92,9 @@ def test_doc_new_creates_header_and_sections(cwd_project: Path) -> None:
     assert result.exit_code == 0, result.output
     target = cwd_project / "docs" / "02_technical" / "contrato_api.md"
     text = target.read_text(encoding="utf-8")
-    assert text.startswith("# Contrato api\n")
+    assert text.startswith("---\n# Tags del índice de memoria (D13)")
+    assert "tags:\n  - contrato\n  - api\n---\n" in text
+    assert "# Contrato api\n" in text
     assert "Fecha: " in text and "Estado: borrador" in text
     assert "## Resumen" in text
     assert "## Qué establece" in text

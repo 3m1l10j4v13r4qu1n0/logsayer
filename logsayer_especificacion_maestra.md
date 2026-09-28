@@ -90,6 +90,8 @@ logsayer agent add <opencode|claude|copilot|cursor|gemini|hermes>   # genera ada
 
 logsayer mentat spec new <hu>               # alias: logsayer spec new
 logsayer navigator state show               # alias: logsayer state show
+logsayer navigator memory index             # alias: logsayer memory index
+logsayer navigator memory status            # alias: logsayer memory status
 logsayer reverend-mother log add "…"        # alias: logsayer log add
 logsayer reverend-mother log index          # alias: logsayer log index
 logsayer inbox                              # lista lo pendiente en la bandeja
@@ -105,6 +107,8 @@ logsayer fremen verify                      # alias: logsayer process check
 **Superficie de ingreso de documentos (Capa 1).** `inbox` a secas lista lo que está esperando ubicación; `inbox add` es el único comando que toca archivos del usuario: mueve el archivo que el humano le señaló a `inbox/` y nada más. `doc route` imprime la tabla de decisión (entrada → capa → destino → ¿se versiona?) sin escribir nada; con argumento devuelve los candidatos para ese archivo, y decide solo con señal inequívoca (§3). `doc new <capa> <nombre>` scaffoldea un documento de Capa 1 con el header estándar; las capas aceptadas son `global` (`docs/01_global/`) y `technical` (`docs/02_technical/`) — para una HU puntual el comando es `spec new <HU>`, que ya existe, y la tabla de ruteo lo indica. Con `--from <archivo>` deja el bloque `## Fuente` completo y mueve el original a `inbox/_done/`.
 
 Ninguno de estos comandos redacta contenido de Capa 1 a partir del archivo: el CLI nombra y ubica, el subagente Mentat deriva (spec §6). El CLI tampoco convierte PDF ni docx — avisa que hay que hacerlo antes, como paso previo y fuera del framework.
+
+**Índice de memoria (capa transversal, no una sexta capa).** `memory index` regenera `docs/00_memory_index.md`, una línea por documento de `docs/`, a partir de la ruta (nivel), del header estándar (fecha · estado) y del frontmatter `tags`; si el documento no declara tags, se derivan del nombre y de la HU citada en `## Fuente`. El índice es un artefacto: se regenera, no se edita a mano. `memory status` informa qué indexa y con cuántas tags — no dictamina frescura, eso es el check `indice_al_dia`. Diseño completo en la fase 8 del roadmap; el retrieval (`memory search`) llega con la misma fase.
 
 ---
 

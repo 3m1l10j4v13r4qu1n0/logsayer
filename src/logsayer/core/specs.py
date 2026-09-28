@@ -12,7 +12,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from logsayer.core import inbox
+from logsayer.core import inbox, memory
 from logsayer.core.routing import DOC_LAYERS, valid_layer, valid_name
 
 HU_DIR = Path("docs") / "04_user_stories"
@@ -71,6 +71,9 @@ def create_doc(
     Devuelve (documento, original archivado en `inbox/_done/`). Con `from_path`
     el original se mueve — nunca se borra — y su procedencia queda registrada en
     el documento, que pasa a ser la versión de referencia (spec §3).
+
+    El frontmatter `tags` queda scaffoldeado con las tags derivadas del nombre:
+    el CLI propone el metadata y el Mentat lo ajusta (D8, D13).
     """
     valid_layer(layer)
     valid_name(name)
@@ -95,6 +98,9 @@ def create_doc(
     rendered = _environment().get_template("doc.md.j2").render(
         title=name.replace("_", " ").capitalize(),
         date=date_cls.today().isoformat(),
+        # El documento se acaba de scaffoldear: no tiene `## Fuente` todavía, así
+        # que las tags derivan solo del nombre.
+        tags=memory.derive_tags(Path(f"{name}.md"), ""),
         source=str(source.relative_to(root)) if source else None,
         source_note=source_note,
         source_kind=source_kind,

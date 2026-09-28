@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 
 from logsayer.config import LogsayerConfig
+from logsayer.core import memory
 from logsayer.core.checks import CheckResult, fail, ok, warn
 from logsayer.core.inbox import age_days, inbox_dir, is_stale, pending
 from logsayer.core.project import state_file
@@ -147,12 +148,16 @@ def check_mixed_layers(root: Path) -> CheckResult:
     findings: list[tuple[str, Path]] = []
     if docs.is_dir():
         layered_prefixes = [str(root / layer) + "/" for layer in LAYERED_MD_DIRS]
-        state_resolved = str(state_file(root).resolve())
+        # Exentos: el snapshot de Capa 2 y el índice de memoria. El índice es un
+        # artefacto transversal (D12), no una sexta capa: sin esta exención el
+        # check leería su propia navegación como una capa mezclada.
+        exempt = {
+            str(state_file(root).resolve()),
+            str(memory.index_path(root).resolve()),
+        }
         for path in docs.rglob("*.md"):
             resolver = str(path.resolve())
-            if resolver.startswith(
-                tuple(layered_prefixes)
-            ) or resolver == state_resolved:
+            if resolver.startswith(tuple(layered_prefixes)) or resolver in exempt:
                 continue
             if path.name.startswith("audit_"):
                 findings.append(
@@ -183,6 +188,10 @@ def check_layer1_headers(root: Path) -> CheckResult:
     Solo `01_global/` y `02_technical/`: las HUs tienen su propio template
     (`hu.md.j2`) y este check no judgea HUs. Los `.md` fuera de `docs/` no se
     escanean — no son de ninguna capa.
+
+    El header se busca en el cuerpo, después del frontmatter: un documento
+    scaffoldeado con `doc new` empieza con `---` + `tags`, y exigir que el
+    título sea la primera línea haría fallar a todo lo que la CLI genera.
     """
     issues: list[str] = []
     for layer in (L1_GLOBAL, L1_TECHNICAL):
@@ -190,8 +199,8 @@ def check_layer1_headers(root: Path) -> CheckResult:
         if not directory.is_dir():
             continue
         for path in sorted(directory.glob("*.md")):
-            text = path.read_text(encoding="utf-8")
-            lines = text.splitlines()
+            body = memory.body_text(path.read_text(encoding="utf-8"))
+            lines = body.splitlines()
             missing: list[str] = []
             if not lines or not _HEADER_TITLE_RE.match(lines[0]):
                 missing.append("'# Título'")
@@ -200,7 +209,7 @@ def check_layer1_headers(root: Path) -> CheckResult:
             missing.extend(
                 f"'{section}'"
                 for section in _HEADER_SECTIONS
-                if section not in text
+                if section not in body
             )
             if missing:
                 issues.append(f"{_rel(root, path)}: falta " + ", ".join(missing))

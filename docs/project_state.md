@@ -9,7 +9,7 @@ fase: fase8
 
 Fase 8 — memoria seleccionable
 
-Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, HU-10 implementada en `feature/hu-10-indice-memoria` (PR #4 abierto), HU-11 implementada en `feature/hu-11-memory-search` (retrieval + `indice_al_dia`, pendiente de PR). Las dos ramas son apiladas sobre `develop`; el fix de `current_phase()` va en `fix/phase-fase-explicita`, entre medio.
+Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. **La fase 8 (memoria seleccionable) está completa y mergeada en `develop`**: diseño en `docs/02_technical/memory_architecture.md`, HU-10 (índice generado + frontmatter `tags`) por el PR #4, el fix de `current_phase()` por el #5 y HU-11 (`memory search` + `indice_al_dia`) por el #6. La superficie es `memory index | status | search` más el check de frescura en Fremen.
 
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
@@ -42,6 +42,6 @@ Pendientes sin dependencia de la 8: publicar 0.7.0 (tag `v0.7.0`), fase 3 restan
 
 ## HUs cerradas desde la última auditoría
 
-1
+2
 
-Auditoría del 2026-09-27 aprobada y contador reseteado. Desde entonces cerró HU-10 (índice de memoria). El umbral sigue siendo 3 HUs.
+Auditoría del 2026-09-27 aprobada y contador reseteado. Desde entonces cerraron HU-10 (índice de memoria) y HU-11 (retrieval y frescura del índice). El umbral sigue siendo 3 HUs: falta una para que la Decidora vuelva a correr, y tocaría con el release de 0.7.0.

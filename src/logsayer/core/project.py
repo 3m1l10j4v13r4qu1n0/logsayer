@@ -5,22 +5,22 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from logsayer.core.memory import split_frontmatter
+
 STATE_PATH = Path("docs") / "project_state.md"
 
-_PHASE_HEADER = "## Fase actual del roadmap"
 _HUS_HEADER = "## HUs cerradas desde la última auditoría"
 _NAME_RE = re.compile(r"^# Estado del proyecto\s*—\s*(.+)$")
 
-_PLACEHOLDER = ("_(", "_(definir", "placeholder")
+_PHASE_KEY = "fase:"
+# El valor declarado se vuelve un nombre de archivo permanente
+# (`logbook_<fase>_NN.md`), así que solo pasa un slug: letras, dígitos, punto y
+# guion. Una frase es una declaración inválida, no un slug que "se limpia".
+_PHASE_VALUE_RE = re.compile(r"^[a-z0-9]+(?:[-_.][a-z0-9]+)*$")
 
 
 def state_file(root: Path) -> Path:
     return root / STATE_PATH
-
-
-def _slug(value: str) -> str:
-    slug = re.sub(r"[^A-Za-z0-9]+", "-", value.strip().lower()).strip("-")
-    return slug or "general"
 
 
 def project_name(root: Path) -> str:
@@ -34,26 +34,38 @@ def project_name(root: Path) -> str:
     return root.name
 
 
-def current_phase(root: Path) -> str:
-    """Slug de la fase actual; 'general' si está en blanco/placeholder o no existe."""
+def declared_phase(root: Path) -> str | None:
+    """La fase que el estado **declara** en su frontmatter, o None.
+
+    El campo `fase` es un identificador, no una frase: se slugifica a nombre
+    de archivo y por eso se valida en vez de normalizarse. Deducirlo de la prosa
+    de la sección "Fase actual del roadmap" convertía cualquier frase en un
+    logbook permanente —"Fase 6 — ingreso de documentos, cerrada y mergeada…"
+    terminó siendo el nombre de un archivo que hubo que borrar a mano.
+
+    None significa "no declarado", y `log add` lo dice en vez de inventar una
+    partición: la fase ausente es un pendiente visible, no un default silencioso.
+    """
     state = state_file(root)
     if not state.is_file():
-        return "general"
-    lines = state.read_text(encoding="utf-8").splitlines()
-    for index, line in enumerate(lines):
-        if line.strip() == _PHASE_HEADER:
-            for candidate in lines[index + 1 :]:
-                stripped = candidate.strip()
-                if not stripped:
-                    continue
-                if stripped.startswith("##"):
-                    return "general"
-                lowered = stripped.lower()
-                if not any(token in lowered for token in _PLACEHOLDER):
-                    return _slug(stripped)
-                return "general"
-            return "general"
-    return "general"
+        return None
+    block, _ = split_frontmatter(state.read_text(encoding="utf-8"))
+    if block is None:
+        return None
+    for line in block:
+        candidate = line.strip()
+        if not candidate.startswith(_PHASE_KEY):
+            continue
+        value = candidate[len(_PHASE_KEY) :].strip().strip("\"'").lower()
+        if not _PHASE_VALUE_RE.match(value):
+            return None
+        return value
+    return None
+
+
+def current_phase(root: Path) -> str:
+    """Slug de la fase declarada; 'general' si no hay fase declarada."""
+    return declared_phase(root) or "general"
 
 
 def read_closed_hus(root: Path) -> int:

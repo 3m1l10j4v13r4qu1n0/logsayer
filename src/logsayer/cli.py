@@ -349,7 +349,7 @@ def log_add(
         str | None,
         typer.Option(
             "--fase",
-            help="Fase del logbook (default: fase actual de project_state.md).",
+            help="Fase del logbook (default: campo 'fase' de project_state.md).",
         ),
     ] = None,
 ) -> None:
@@ -357,12 +357,19 @@ def log_add(
     try:
         root = require_logsayer_root(Path.cwd())
         config = LogsayerConfig.load(root / "logsayer.toml")
+        undeclared = phase is None and project.declared_phase(root) is None
         result = logbook.add_entry(root, text, config, phase_override=phase)
     except (ProjectRootError, logbook.LogbookError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     path = result["path"]
     assert isinstance(path, Path)
     typer.echo(f"Entrada registrada en {path.relative_to(root)}")
+    if undeclared:
+        typer.echo(
+            "\n! Sin fase declarada en docs/project_state.md: la entrada cayó en "
+            "'general'.\n  Declarala en el frontmatter (campo 'fase:') o pasá "
+            "--fase para no partir la bitácora."
+        )
 
 
 @log_typer.command("index")

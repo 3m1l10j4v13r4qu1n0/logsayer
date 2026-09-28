@@ -4,9 +4,9 @@
 
 ## Fase actual del roadmap
 
-Fase 6 — Ingreso de documentos (0.7.0)
+Fase 6 — Ingreso de documentos (cerrada y mergeada en `develop`; 0.7.0 aún sin publicar)
 
-Fases 0 a 5 cerradas; la 6 acaba de cerrarse con `inbox/`, `inbox add`, `doc route` y `doc new`. Pendientes: publicar en PyPI (token), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes).
+Fases 0 a 6 cerradas. El proyecto ya está publicado en PyPI: `logsayer` 0.6.0 subido el 2026-09-25 (verificado en vivo vía la API de PyPI). Pendientes: publicar 0.7.0 (tag `v0.7.0`), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda que dejó la auditoría del 2026-09-27 en HU-07 (permisos del adaptador de Claude Code + dos criterios de aceptación desactualizados).
 
 ## Decisiones activas
 
@@ -20,9 +20,10 @@ Fases 0 a 5 cerradas; la 6 acaba de cerrarse con `inbox/`, `inbox add`, `doc rou
 - D8 — El CLI mueve y nombra; el contenido lo deriva el subagente Mentat.
 - D9 — Los checks de Capa 1 (`header_capa1`, `estado_al_dia`) se validaron contra este mismo repo: fallaron el primer día.
 - D10 — El CLI propone la capa, no la decide: sin default a `02_technical/`; elige Mentat.
+- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25. El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
 
 ## HUs cerradas desde la última auditoría
 
-4
+0
 
-HU-06 (bandeja + warn), HU-07 (ruteo y doc new), HU-08 (onboarding público), HU-09 (checks de Capa 1). Umbral 3 superado: la próxima sesión arranca proponiendo auditoría de la Decidora.
+Auditoría del 2026-09-27 aprobada y contador reseteado (HU-06..HU-09: 3 de 4 cumplen, HU-07 parcial con 3 acciones pendientes). El umbral vuelve a ser 3 HUs.

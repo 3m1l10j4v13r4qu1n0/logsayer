@@ -7,8 +7,6 @@ Fecha: 2026-09-25 · Estado: vigente
 Registro vivo de las decisiones de arquitectura activas. Cada una tiene su porqué en la
 bitácora; acá queda solo la referencia y su estado.
 
-Registro de las decisiones de arquitectura activas. Cada una tiene su porqué (entrada de logbook en su momento); acá solo la referencia viva.
-
 ## D1. Un motor único + adaptadores finos (spec §6)
 
 Toda la lógica vive en `logsayer/core/` y `cli.py`. Los archivos generados por `agent add` son wrappers finos que llaman al CLI — agregar un agente nuevo no duplica lógica. *Referencia: bitácora fase 3.*
@@ -60,3 +58,23 @@ El frontmatter se limita a `tags`, que consume `memory search`. Descartados: `id
 ## D14. El retrieval elige qué leer primero, nunca qué es auditable
 
 La Decidora usa `memory search` para ordenar su arranque, pero el alcance de una auditoría sigue siendo `docs/04_user_stories/` completo. Motivo: si el subgrafo deja afuera un documento relevante, la auditoría pasa por omisión y el marco miente — un fallo silencioso peor que un check en rojo. El índice es un atajo de lectura, no un recorte de alcance. Es la traducción del D5 (el veredicto es del agente, no del CLI) al terreno de la recuperación: el motor acota el **contexto**, nunca el **alcance**. *Referencia: `docs/02_technical/memory_architecture.md`.*
+
+## D15. El nivel es distancia a la especificación, no un grado de importancia
+
+`01_global/` y `docs/project_state.md` son nivel 0, `02_technical/` nivel 1, `HU-XX/` nivel 2, y `03_process/`, `05_agile_methodology/`, `06_audits/` y `logbooks/` son **todas nivel 3**. La numeración mide qué tan lejos está un documento de la especificación de lo que hay que construir, y esas cuatro capas no compiten por ser la fuente de verdad de una HU: compiten por ser el registro de por lo que se construyó: la forma que tomó el trabajo y la evidencia de que pasó. El nivel se deriva de la ruta y nunca se escribe en el documento, por D13 —un campo que nadie lee mecánicamente se pudre, y este además no podría dejar de desincronizarse de la ruta que lo origina. *Referencia: `docs/02_technical/memory_architecture.md`, HU-10.*
+
+## D16. El frontmatter es preámbulo, no contenido
+
+El bloque `---` inicial es metadata: el header estándar se valida igual, en el cuerpo, después del bloque. Por eso `header_capa1` busca el título en el cuerpo y no en la primera línea — si no, todo documento scaffoldeado por la propia CLI passaría a fallar, que es un check que se vuelve decorativo por construcción. Un `---` sin pareja no rompe la indexación (el documento entra sin tags) pero el Suk sí lo señala como header faltante: perdonar metadata faltante nunca vale esconderlo. *Referencia: HU-10.*
+
+## D17. La fase se declara; no se deduce de la prosa
+
+La fase de la bitácora es el campo `fase` del frontmatter de `docs/project_state.md`, y se valida como identificador (letras, dígitos, `-`, `_`, `.`) en vez de normalizarse. Antes `current_phase()` slugificaba la primera línea de la sección "Fase actual del roadmap", que es texto libre para humanos: "Fase 6 — ingreso de documentos, cerrada y mergeada…" terminó siendo el nombre permanente de un logbook que hubo que borrar a mano. El motivo es que **el valor se convierte en un nombre de archivo**: una frase no es un slug que se limpia, es una declaración inválida. Y si no hay fase declarada, `log add` lo dice en su salida en vez de particionar en silencio: la fase ausente es un pendiente visible, no un default. Es D13 aplicado al estado — un campo entra solo si un comando lo consume mecánicamente, y el que lo consume es la Reverenda Madre. *Referencia: `fix/phase-fase-explicita`, incidente del 2026-09-28 en `logbook_fase8_01.md`.*
+
+## D18. El retriever lee el artefacto, no los documentos
+
+`memory search` parsea `docs/00_memory_index.md` en vez de volver al disco. La razón es garantizar que `indice_al_dia` tenga algo que verificar: un retrieval que regenera antes de responder, o que lee los archivos directo, nunca puede estar viejo, y entonces el check es decorativo y el índice es un artefacto que nadie necesita mirar. El precio —un documento nuevo no es encontrable hasta que se reindexa— es explícito y lo paga el check, que avisa en `warn` nombrando el documento más nuevo. El ranking son las tags del contrato, y la ruta no puntúa: matchear `readme` o `technical` devolvería casi todo y dejaría de filtrar. *Referencia: HU-11.*
+
+## D19. El aviso de frescura del índice mira Capa 1
+
+`indice_al_dia` compara el índice contra los documentos de `01_global/`, `02_technical/` y `04_user_stories/`, no contra todo `docs/`. Con el alcance completo, `log add` —que anexa al logbook— y el cierre de sesión —que reescribe `project_state.md`— pondrían el índice viejo en casi todos los cierres, y un aviso que aparece siempre deja de avisar (D7). Las capas que no compiten por ser fuente de verdad de una HU (D15) no cambian lo que el agente tiene que leer primero. *Referencia: HU-11.*

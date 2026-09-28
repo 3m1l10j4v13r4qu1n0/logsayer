@@ -95,9 +95,9 @@ mantenerlas: si faltan, el índice sigue siendo correcto.
 
 <!-- Generado por 'logsayer memory index'. No editar a mano. -->
 
-01_global/mission.md                              · nivel 0 · vigente · 2026-09-24
+01_global/mission.md                              · nivel 0 · vigente · 2026-09-24 · mission
 02_technical/memory_architecture.md               · nivel 1 · vigente · 2026-09-28 · memoria, retrieval
-04_user_stories/HU-09/README.md                   · nivel 2 · vigente · 2026-09-27 · checks, capa-1
+04_user_stories/HU-09/README.md                   · nivel 2 · — · — · hu-09
 ```
 
 La implementación (HU-10) cierra tres detalles que el ejemplo deja abiertos:
@@ -116,19 +116,42 @@ Este documento declara su propio frontmatter porque la CLI lo scaffoldea y el
 Mentat lo ajusta (D8): es el ejemplo ejecutable del contrato, no una excepción
 a él.
 
+### Qué decide el retrieval (HU-11)
+
+El diseño deja el ranking en una línea ("tokeniza, intersecta, ordena y corta")
+y la implementación fija cuatro cosas que esa línea no dice:
+
+1. **Lee el artefacto, no los documentos.** Si `search` regenerara o leyera del
+   disco, `indice_al_dia` no tendría nada que verificar. El precio —un documento
+   nuevo no es encontrable hasta que se reindexa— lo paga el check (D18).
+2. **Puntúan las tags, y el acierto exacto pesa más que el prefijo.** La ruta
+   no puntúa: `readme` y `technical` devolverían casi todo. A igualdad de
+   puntaje manda el nivel y después la ruta, o sea el mismo orden del índice.
+3. **La consulta se tokeniza sin partir por guion ni guion bajo** —`hu-04` es una
+   tag real y también la consulta más natural para buscar una HU—, se le doblan
+   los acentos y se le sacan los stopwords. Sin stopwords, "de la memoria"
+   puntúa igual con la preposición que con el término buscado.
+4. **`indice_al_dia` mira Capa 1**, no todo `docs/`: `log add` y el cierre de
+   sesión tocarían el índice en casi todos los cierres, y un aviso que aparece
+   siempre no avisa (D7, D19).
+
 ### Comandos
 
 ```bash
 logsayer memory index                              # regenera el índice      (HU-10)
 logsayer memory status                             # qué indexa, con cuántas tags (HU-10)
-logsayer memory search "checks de capa 1"          # candidatos ordenados     (HU-11)
-logsayer memory search "inbox" --capa technical    # con filtro de capa       (HU-11)
+logsayer memory search "memoria"                   # candidatos ordenados     (HU-11)
+logsayer memory search "hu-04" --capa stories      # con filtro de capa       (HU-11)
 ```
 
-Ambos con su alias de rol: `logsayer memory ...` ≡ el subagente que los consume
-(`index` y `status` cuelgan del Navegante; `search`, en HU-11, lo consumen
-Mentat y Truthsayer). `status` no dictamina frescura —eso es `indice_al_dia` en
-HU-11—: informa qué hay.
+`--limit` corta el número de candidatos (`0` = todos; por defecto 5). El grupo
+tiene un solo alias de rol, el del Navegante: Mentat y Truthsayer lo consumen
+con el alias plano (D2), porque colgarles el grupo entero les daría también
+`memory index`, que es una escritura fuera de su alcance declarado.
+
+`status` no dictamina frescura —eso es `indice_al_dia`, check de Fremen—:
+informa qué hay. `search` tampoco: devuelve lo que el índice dice, tenga la
+edad que tenga. Ninguna de las dos regenera ni repara nada en silencio.
 
 ### Reparto por capa y subagente
 

@@ -33,3 +33,7 @@ The Truthsayer ({{ project_name }}) es la Decidora de Verdad: detecta si lo cons
 - `logsayer audit run`: genera la estructura del reporte y el prompt de auditoría; el resultado reflexivo lo produce el agente orquestador con el reporte como insumo.
 - `logsayer audit status`: muestra el contador vs el umbral y el último reporte.
 - Al aprobar la auditoría, re-correr `logsayer audit run --reset-counter` para reiniciar el contador.
+
+## Arranque barato (no reemplaza el alcance)
+- `logsayer memory search "<tema>"` ordena **por dónde empezar** a leer, y `--capa` acota a una capa. Es contexto barato: lo que el índice dice, que puede estar viejo (`logsayer fremen verify` te dice si lo está).
+- El **alcance** de la auditoría sigue siendo `docs/04_user_stories/` completo, siempre. El retrieval elige qué leer primero, nunca qué es auditable: una HU que el subgrafo deje afuera hace que la auditoría pase por omisión, y eso es peor que un check en rojo.

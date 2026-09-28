@@ -8,22 +8,31 @@ de estructura, estado y no mezcla de capas (regla de oro, spec §2).
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
 from logsayer.config import LogsayerConfig
 from logsayer.core import memory
 from logsayer.core.checks import CheckResult, fail, ok, warn
+from logsayer.core.freshness import doc_timestamp
 from logsayer.core.inbox import age_days, inbox_dir, is_stale, pending
+from logsayer.core.layers import (
+    AGILE,
+    AUDITS,
+    GLOBAL,
+    LOGBOOKS,
+    PROCESS,
+    STORIES,
+    TECHNICAL,
+)
 from logsayer.core.project import state_file
 
-L1_GLOBAL = Path("docs") / "01_global"
-L1_TECHNICAL = Path("docs") / "02_technical"
-L1_STORIES = Path("docs") / "04_user_stories"
-L5_PROCESS = Path("docs") / "03_process"
-L5_AGILE = Path("docs") / "05_agile_methodology"
-L4_AUDITS = Path("docs") / "06_audits"
-L3_LOGBOOKS = Path("docs") / "logbooks"
+L1_GLOBAL = Path("docs") / GLOBAL
+L1_TECHNICAL = Path("docs") / TECHNICAL
+L1_STORIES = Path("docs") / STORIES
+L5_PROCESS = Path("docs") / PROCESS
+L5_AGILE = Path("docs") / AGILE
+L4_AUDITS = Path("docs") / AUDITS
+L3_LOGBOOKS = Path("docs") / LOGBOOKS
 
 LAYERED_MD_DIRS: tuple[Path, ...] = (
     L1_GLOBAL,
@@ -218,41 +227,6 @@ def check_layer1_headers(root: Path) -> CheckResult:
     return ok("header_capa1")
 
 
-def _last_commit_ts(root: Path, rel_path: Path) -> float | None:
-    """Fecha del último commit del archivo, o None si no es un repo git."""
-    try:
-        completed = subprocess.run(
-            ["git", "log", "-1", "--format=%ct", "--", str(rel_path)],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=10,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if completed.returncode != 0:
-        return None
-    raw = completed.stdout.strip()
-    if not raw.isdigit():
-        return None
-    return float(raw)
-
-
-def _doc_timestamp(root: Path, path: Path) -> float:
-    """Fecha de versión de un documento: último commit **o** último toque en disco.
-
-    Se toma el mayor de los dos, y no solo el commit, porque si no la
-    comparación mezclaría dos relojes: un archivo commiteado y después editado
-    en el working tree seguiría fechada en su commit viejo, mientras que un
-    archivo sin versionar se fecha por mtime — y el más nuevo de los dos
-    parecería "futuro". Con el máximo, todo queda en la misma escala.
-    """
-    committed = _last_commit_ts(root, path.relative_to(root))
-    modified = path.stat().st_mtime
-    return modified if committed is None else max(committed, modified)
-
-
 def check_state_freshness(root: Path) -> CheckResult:
     """El snapshot no puede quedar viejo sin que nadie lo note (F7).
 
@@ -264,7 +238,7 @@ def check_state_freshness(root: Path) -> CheckResult:
     state = state_file(root)
     if not state.is_file():
         return ok("estado_al_dia", "sin estado que comparar")
-    state_ts = _doc_timestamp(root, state)
+    state_ts = doc_timestamp(root, state)
     newer: list[str] = []
     for layer in (L1_GLOBAL, L1_TECHNICAL, L1_STORIES):
         directory = root / layer
@@ -272,7 +246,7 @@ def check_state_freshness(root: Path) -> CheckResult:
             continue
         candidates = [path for path in directory.rglob("*.md") if path.is_file()]
         for path in sorted(candidates):
-            if _doc_timestamp(root, path) > state_ts:
+            if doc_timestamp(root, path) > state_ts:
                 newer.append(_rel(root, path))
     if newer:
         return warn(

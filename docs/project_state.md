@@ -1,3 +1,6 @@
+---
+fase: fase8
+---
 # Estado del proyecto — logsayer
 
 > Snapshot operativo para el agente al iniciar cada sesión (Capa 2 — Navegante). No es acumulativo: se sobrescribe al cerrar sesión con aprobación previa. Referencia: `logsayer_especificacion_maestra.md` y `docs/`.
@@ -8,9 +11,10 @@ Fase 8 — memoria seleccionable
 
 Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, HU-10 implementada en la rama `feature/hu-10-indice-memoria` (índice generado + frontmatter `tags`, pendiente de PR a `develop`); HU-11 (retrieval + `indice_al_dia`) es lo que sigue en la fase.
 
-> La primera línea de esta sección es el identificador de la fase: `logsayer log add` la
-> convierte en slug para nombrar el logbook de la fase. El detalle va en el párrafo de
-> abajo, nunca en esa línea.
+> El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
+> que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
+> slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
+> contexto para humanos y no participa de esa decisión.
 
 Pendientes sin dependencia de la 8: publicar 0.7.0 (tag `v0.7.0`), fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda), fase 7 (comunidad: presets, más agentes) y la deuda de HU-07 que dejó la auditoría del 2026-09-27 (permisos del adaptador de Claude Code + dos criterios de aceptación desactualizados). La 7 y la 8 no se bloquean entre sí: se pueden ejecutar en cualquier orden.
 

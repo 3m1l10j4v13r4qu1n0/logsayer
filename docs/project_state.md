@@ -9,7 +9,7 @@ fase: fase8
 
 Fase 8 — memoria seleccionable
 
-Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, HU-10 implementada en la rama `feature/hu-10-indice-memoria` (índice generado + frontmatter `tags`, pendiente de PR a `develop`); HU-11 (retrieval + `indice_al_dia`) es lo que sigue en la fase.
+Fases 0 a 6 cerradas y mergeadas. La 6 (ingreso de documentos, 0.7.0) entró a `develop` por el PR #2; 0.7.0 todavía no se publica. La fase 8 (memoria seleccionable) está en curso: diseño cerrado en `docs/02_technical/memory_architecture.md`, HU-10 implementada en `feature/hu-10-indice-memoria` (PR #4 abierto), HU-11 implementada en `feature/hu-11-memory-search` (retrieval + `indice_al_dia`, pendiente de PR). Las dos ramas son apiladas sobre `develop`; el fix de `current_phase()` va en `fix/phase-fase-explicita`, entre medio.
 
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
@@ -35,7 +35,10 @@ Pendientes sin dependencia de la 8: publicar 0.7.0 (tag `v0.7.0`), fase 3 restan
 - D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
 - D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.
 - D15 — El nivel es distancia a la especificación, no un grado de importancia: las capas que no compiten por ser la fuente de verdad de una HU (`03_process/`, `05_agile_methodology/`, `06_audits/`, `logbooks/`) son todas nivel 3, y el nivel se deriva de la ruta, nunca se escribe en el documento.
-- D16 — El frontmatter es preámbulo, no contenido: el header estándar se valida igual, después del bloque. Un `---` sin pareja no rompe la indexación (el documento entra sin tags) pero el Suk sí lo señala como header faltante: perdonar eletadata nunca vale hidear metadata.
+- D16 — El frontmatter es preámbulo, no contenido: el header estándar se valida igual, después del bloque. Un `---` sin pareja no rompe la indexación (el documento entra sin tags) pero el Suk sí lo señala como header faltante: perdonar metadata nunca vale esconderla.
+- D17 — La fase se declara en el campo `fase` del frontmatter del estado y se valida como identificador, en vez de slugificarse de la prosa. El valor se convierte en nombre de archivo, así que una frase es una declaración inválida; sin fase declarada, `log add` avisa en vez de particionar en silencio.
+- D18 — El retriever lee el artefacto, no los documentos: si regenerara, `indice_al_dia` no tendría nada que verificar. El precio (un documento nuevo no es encontrable hasta que se reindexa) lo paga el check.
+- D19 — `indice_al_dia` mira solo Capa 1: `log add` y el cierre de sesión tocarían el índice en casi todos los cierres, y un aviso permanente no avisa.
 
 ## HUs cerradas desde la última auditoría
 

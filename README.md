@@ -160,12 +160,13 @@ A document arrived from another team? See
 | `logsayer state show` | `logsayer navigator state show` | 2 | Prints the project snapshot |
 | `logsayer memory index` | `logsayer navigator memory index` | transversal | Regenerates `00_memory_index.md` from the real files |
 | `logsayer memory status` | `logsayer navigator memory status` | transversal | Inventory of the index (what it covers, how many tags) |
+| `logsayer memory search "…"` | `logsayer navigator memory search` | transversal | Ranked candidates by tag (`--capa`, `--limit`) |
 | `logsayer log add "…"` | `logsayer reverend-mother log add` | 3 | Appends a logbook entry (auto-partition) |
 | `logsayer log index` | `logsayer reverend-mother log index` | 3 | Rebuilds `00_index.md` from real files |
 | `logsayer check` | `logsayer suk doctor` | 4 | Mechanical checks: structure, no layer mixing, pending inbox |
 | `logsayer audit run` | `logsayer truthsayer audit run` | 4 | Generates the audit report + semantic prompt |
 | `logsayer audit status` | `logsayer truthsayer audit status` | 4 | Shows HU counter vs threshold, last report |
-| `logsayer process check` | `logsayer fremen verify` | 5 | Process checks: Dor, coordination agreement |
+| `logsayer process check` | `logsayer fremen verify` | 5 | Process checks: Dor, coordination agreement, index freshness |
 
 ## Configuration (`logsayer.toml`)
 
@@ -199,7 +200,7 @@ A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/ad
 
 - **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), opencode/Claude adapters, mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
 - **7:** community presets, more agents on demand (copilot, cursor, gemini, hermes).
-- **8 (current):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search`. You are here.
+- **8 (current):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable). You are here.
 
 ## Acknowledgment & license
 

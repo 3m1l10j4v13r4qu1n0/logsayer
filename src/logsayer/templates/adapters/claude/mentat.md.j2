@@ -15,6 +15,10 @@ The Mentat ({{ project_name }}) define qué se construye y cómo se valida: hist
 - Editar el contenido de la HU solo dentro de su carpeta en `docs/04_user_stories/`.
 - Una decisión de arquitectura nueva es candidata a entrada de logbook (la escribe la Reverenda Madre), nunca se registra directo en el estado.
 
+## Memoria seleccionable
+- `logsayer memory search "<tema>"` te dice **dónde hay algo escrito** antes de que abras nada. Es lo más barato que existe: lee el índice, no los documentos.
+- Las `tags` del frontmatter son tuyas para ajustar: el CLI las scaffoldea del nombre y el índice sigue siendo correcto si no las tocás. Cuando la búsqueda no encuentra un documento que sabés que existe, el problema suele ser la tag, no el índice.
+
 ## Documentos entrantes
 - Si el humano te pide ubicar un documento que no es del proyecto (entrega, contrato, acta), pasalo a la bandeja con `logsayer inbox add <archivo>`.
 - Corré `logsayer doc route <archivo>` para ver los candidatos. **La capa la decidís vos**: el CLI solo resuelve cuando la señal es inequívoca (extensión no markdown, o una HU en el nombre); en cualquier otro caso devuelve candidatos y una pista, y no clasifica.

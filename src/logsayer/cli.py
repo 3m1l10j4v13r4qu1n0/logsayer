@@ -333,6 +333,38 @@ def memory_status() -> None:
         typer.echo("\nTodavía no existe. Generalo con: logsayer memory index")
 
 
+@memory_typer.command("search")
+def memory_search(
+    query: Annotated[str, typer.Argument(help="Consulta sobre las tags del índice.")],
+    capa: Annotated[
+        str | None,
+        typer.Option(
+            "--capa",
+            help="Filtra por capa (global, technical, stories, audits, logbooks, …).",
+        ),
+    ] = None,
+    limit: Annotated[
+        int,
+        typer.Option("--limit", help="Máximo de candidatos a listar (0 = todos)."),
+    ] = memory.DEFAULT_LIMIT,
+) -> None:
+    """Candidatos ordenados: qué leer primero, no qué es auditable."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        hits = memory.search(root, query, capa=capa, limit=limit)
+        total = len(memory.load_index(root))
+    except (ProjectRootError, memory.MemoryError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if not hits:
+        typer.echo(f"Sin coincidencias para {query!r} en el índice de memoria.")
+        typer.echo("\nEl índice puede estar viejo: logsayer fremen verify")
+        return
+    width = max(len(hit.document.path.as_posix()) for hit in hits)
+    typer.echo(f"{len(hits)} de {total} documentos · {query!r}")
+    for position, hit in enumerate(hits, start=1):
+        typer.echo(f"  {position}. {hit.row(width)}")
+
+
 _register_with_alias("navigator", memory_typer, "memory")
 
 

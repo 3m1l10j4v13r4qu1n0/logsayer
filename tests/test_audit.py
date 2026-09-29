@@ -330,6 +330,40 @@ class TestPasadaAislada:
         assert "### HU-01" in text
         assert "### HU-02" not in text
 
+    def test_el_cierre_apunta_al_reporte_vigente(self, repo: Path) -> None:
+        """Sin esto el prompt decía `docs/06_audits/None` y pedía completar la
+        columna Evidencia de un reporte que no existe (auditoría 2026-09-29)."""
+        _hu(repo, "HU-01")
+        report = audit.run_audit(repo)
+        prompt = audit.run_audit(repo, only="HU-01")
+        text = prompt.read_text(encoding="utf-8")
+        assert "None" not in text
+        assert f"docs/06_audits/{report.name}" in text
+        assert "de la fila de HU-01" in text
+
+    def test_sin_reporte_el_cierre_manda_a_scaffoldear(self, repo: Path) -> None:
+        """Sin reporte previo la pasada se emite igual, pero no puede inventar
+        un destino: la base fija la sostiene (HU-13, decisión 2)."""
+        _hu(repo, "HU-01")
+        prompt = audit.run_audit(repo, only="HU-01")
+        text = prompt.read_text(encoding="utf-8")
+        assert "logsayer audit run" in text
+        assert "docs/06_audits/None" not in text
+
+    def test_una_pasada_no_pide_sintesis(self, repo: Path) -> None:
+        """La síntesis lee la tabla entera (D23): en una pasada repetida no
+        existe, y pedirla sería una segunda pasada (HU-13, decisión 3)."""
+        _hu(repo, "HU-01")
+        _hu(repo, "HU-02")
+        report = audit.run_audit(repo)
+        single = audit.run_audit(repo, only="HU-01").read_text(encoding="utf-8")
+        assert "## Síntesis" not in single
+        assert "acá hay una sola HU" in single
+        full = (report.parent / f"{report.stem}.prompt.md").read_text(
+            encoding="utf-8"
+        )
+        assert "## Síntesis" in full
+
     def test_hu_fuera_de_alcance_falla(self, repo: Path) -> None:
         _hu(repo, "HU-01")
         with pytest.raises(audit.AuditError):

@@ -124,6 +124,13 @@ Un único motor (`logsayer/core/`) + un adaptador por agente (`logsayer/adapters
 
 **Principio de diseño clave:** la lógica vive en el CLI, no en los archivos de comando por agente. Los archivos que se generan para cada agente son wrappers finos que llaman al CLI (`logsayer log add "…"`), igual que hace Spec Kit con sus `speckit.*` — así se agrega un agente nuevo sin duplicar lógica.
 
+**La superficie declarativa de permisos no es la misma en todos los agentes, y el CLI no la iguala a la fuerza.** El single-writer por capa se declara con la unidad que cada herramienta soporta:
+
+- **opencode**: el bloque `permissions:` del subagente evalúa reglas ordenadas por `action` + `resource` + `effect`. El orden importa: `edit: * deny` tiene que preceder a los `shell … allow`, o la denegación general se come las excepciones. Es el único adaptador donde el alcance por ruta y por comando es una declaración.
+- **Claude Code**: el frontmatter de subagente solo expone `tools` (allowlist de **nombres de herramienta**) y `disallowedTools`. La granularidad es la herramienta, no el recurso: no hay `Edit(<ruta>)` ni `Bash(<comando>)` por subagente. Las reglas por recurso existen en `permissions.allow/ask/deny` de `settings.json`, pero son **de sesión** —alcanzarían a la sesión principal y a los otros roles por igual—, así que logsayer **no las genera**: un archivo de permisos que no se puede acotar al subagente no declara lo que parece declarar. En este adaptador el alcance por ruta queda en el prompt y en las reglas de la sesión, y el template lo dice en vez de dejar que la prosa parezca una garantía.
+
+El criterio que se sigue al agregar un adaptador es no escribir un campo de permiso que la herramienta pueda ignorar en silencio: un campo no aplicado se lee como una garantía y opera como una ausencia. Ver `docs/04_user_stories/HU-14/README.md`.
+
 ---
 
 ## 7. Flujo de sesión y disparadores

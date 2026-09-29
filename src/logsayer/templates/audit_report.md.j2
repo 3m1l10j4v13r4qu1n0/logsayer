@@ -7,14 +7,39 @@
 
 {{ closed_hus }}
 
-## HUs auditadas
+## Alcance
 
-- _(Listar cada HU auditada.)_
+Las filas de la tabla las generó el CLI enumerando `docs/04_user_stories/HU-*/`
+{% if previous %}(último reporte: `audit_{{ previous }}.md`){% else %}(sin reporte previo){% endif %}.
+El alcance lo decide el disco, no el agente: **agregá el veredicto de cada fila,
+no borres ni agregues filas**. Un hueco es una auditoría que pasó por omisión
+(D14), y `logsayer check` lo señala con `auditoria_completa`.
 
-## Resultado por HU
+{% if previous %}
+«sin cambios» significa que la HU ya tenía veredicto en el reporte del
+{{ previous }}, y que ni su README ni lo que cita cambiaron desde entonces.
+Es una herencia condicionada, no un atajo: si tocaste lo que la HU cita,
+volvela a auditar.
+{% else %}
+Es la primera auditoría con worklist: ninguna HU hereda veredicto.
+{% endif %}
 
-- _(Cumple / no cumple / parcial — con evidencia, citando archivos y líneas.)_
+## Veredicto por HU
 
-## Veredicto
+| HU | Veredicto | Evidencia |
+| --- | --- | --- |
+{% for item in items %}{{ item.row() }}
+{% endfor %}
+{% if items|selectattr("unchanged")|list|length %}
+<!-- Pasan por herencia: {{ items|selectattr("unchanged")|map(attribute="hu")|join(", ") }} -->
+{% endif %}
+
+## Sintesis entre HUs
+
+_(Se completa al final, leyendo solo los veredictos de la tabla. Si no hay
+ninguna contradicción, escribí "sin contradicciones detectadas": un vacío no
+distingue "no encontré nada" de "no corrí".)_
+
+## Resultado
 
 _(Resumen y próximos pasos.)_

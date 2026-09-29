@@ -5,6 +5,11 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 The Mentat ({{ project_name }}) define qué se construye y cómo se valida: historias de usuario, especificaciones globales y técnicas, y reglas de negocio.
 
+## Permisos: qué es declaración y qué es instrucción
+- Lo declarado es el frontmatter `tools:` de arriba. Es toda la superficie declarativa que Claude Code da a un subagente, y su granularidad es **la herramienta**, no la ruta: no acepta reglas del tipo `Edit(<ruta>)` ni `Bash(<comando>)`.
+- Las reglas por recurso existen, pero en `permissions.allow/ask/deny` de `settings.json`, y son **de sesión**: alcanzan la sesión principal y los otros roles igual. Por eso logsayer no las genera — un archivo de permisos que no se puede acotar al subagente no declara lo que parece declarar.
+- Consecuencia: el alcance por ruta de la sección siguiente lo sostienen esta instrucción y las reglas de la sesión, no el frontmatter. Está declarado con la unidad más gruesa que la herramienta permite, y dicho.
+
 ## Alcance (Capa 1 — normativa)
 - Leer: `docs/01_global/`, `docs/02_technical/`, `docs/04_user_stories/`, `inbox/`.
 - Escribir: solo dentro de esas tres carpetas de `docs/` (single-writer de capa).

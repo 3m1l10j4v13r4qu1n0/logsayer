@@ -148,6 +148,31 @@ def test_doc_new_from_binary_keeps_conversion_note(cwd_project: Path) -> None:
     assert "quedó archivado en `inbox/_done/`" in text
 
 
+def test_doc_new_from_binary_warns_on_stdout(cwd_project: Path) -> None:
+    """El aviso tenía que salir por stdout además de quedar en el documento:
+    el que lo lee después es la Decidora, y quien lo pidió es el humano que
+    acaba de tipear el comando (spec §3, D25, HU-14)."""
+    outside = cwd_project.parent / "acta.pdf"
+    outside.write_bytes(b"%PDF-1.4\n")
+    result = runner.invoke(
+        app, ["doc", "new", "technical", "acta_reunion", "--from", str(outside)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "Aviso: acta.pdf no es markdown" in result.output
+
+
+def test_doc_new_from_markdown_does_not_warn(cwd_project: Path) -> None:
+    """El aviso es del original no markdown: colgarlo a un `.md` sería ruido
+    permanente, y un aviso que aparece siempre deja de avisar (D7)."""
+    outside = cwd_project.parent / "contrato.md"
+    outside.write_text("# Contrato\n", encoding="utf-8")
+    result = runner.invoke(
+        app, ["doc", "new", "technical", "contrato_api", "--from", str(outside)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "Aviso:" not in result.output
+
+
 def test_doc_new_rejects_hu_layer(cwd_project: Path) -> None:
     result = runner.invoke(app, ["doc", "new", "hu", "HU-09"])
     assert result.exit_code != 0

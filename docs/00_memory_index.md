@@ -39,3 +39,4 @@ logbooks/logbook_fase4_01.md         · nivel 3 · — · — · logbook, fase4
 logbooks/logbook_fase5_01.md         · nivel 3 · — · — · logbook, fase5
 logbooks/logbook_fase6_01.md         · nivel 3 · — · — · logbook, fase6
 logbooks/logbook_fase8_01.md         · nivel 3 · — · — · logbook, fase8
+logbooks/logbook_fase9_01.md         · nivel 3 · — · — · logbook, fase9

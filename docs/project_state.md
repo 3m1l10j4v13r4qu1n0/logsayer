@@ -15,17 +15,28 @@ disco y `auditoria_completa` mide la cobertura parseando la tabla, no
 interpretando prosa. Veredicto: 11 de 13 HUs cumplen, HU-07 y HU-13 quedaron
 parciales (`docs/06_audits/audit_2026-09-29.md`).
 
+La deuda de HU-07 se cierra con HU-14, en la rama
+`feature/hu-14-cierre-deuda-hu-07`: el aviso de conversión de `doc new` sale por
+stdout (D25), la superficie de permisos de cada adaptador queda declarada con la
+unidad que su herramienta soporta y la excepción de Claude Code escrita en la
+spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
+(`audit run --hu` apuntaba a `docs/06_audits/None`).
+
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: publicar 0.7.0 con su tag `v0.7.0`; cerrar la deuda que
-dejó la auditoría (permisos del adaptador de Claude Code de HU-07, más los dos
-criterios de aceptación desactualizados de esa HU); fase 3 restante (adaptadores
-copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad: presets, más
-agentes). La fase 10 (frontmatter extendido) sigue desplazada: solo entra si
-duele.
+Pendientes, en orden: mergear el PR de HU-14; publicar 0.7.0 con su tag
+`v0.7.0` (el `[Unreleased]` del CHANGELOG está vacío con las fases 8 y 9 sin
+documentar, así que la versión a cortar hay que decidirla); refrescar `AGENTS.md`
+y el roadmap del README, que siguen diciendo "fase 8 (current)"; fase 3 restante
+(adaptadores copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad:
+presets, más agentes). Dos hallazgos de la auditoría siguen abiertos: el
+contador de HUs del estado no lo verifica ningún check, y
+`audit run --reset-counter` scaffoldea un reporte nuevo con el alcance entero
+vacío antes de resetear. La fase 10 (frontmatter extendido) sigue desplazada:
+solo entra si duele.
 
 ## Decisiones activas
 
@@ -52,13 +63,19 @@ duele.
 - D21 — `docs/project_state.md` no invalida la herencia de una HU: se reescribe en cada cierre de sesión, y contarlo invalidaría para siempre el veredicto de toda HU que lo menciona.
 - D22 — `--hu` repite una pasada y no escribe reporte: el alcance vive en la tabla, y un reporte con una sola fila sería el último y dejaría el resto sin cubrir.
 - D23 — La síntesis lee solo la tabla de veredictos, y solo si algún veredicto cambió: abrir HUs para sintetizar sería una segunda pasada entera.
+- D24 — La superficie de permisos se declara con la unidad que la herramienta soporta: opencode tiene bloque `permissions:` por acción/recurso/efecto, Claude Code solo el allowlist `tools` (granularidad por herramienta). No se escribe un campo que la herramienta pueda ignorar en silencio, y `settings.json` no se genera porque es de sesión.
+- D25 — Un aviso que solo vive en el documento generado no avisa a quien lo pidió: `doc new` muestra el aviso de conversión por stdout, además de dejarlo en el bloque `## Fuente`.
 
 ## HUs cerradas desde la última auditoría
 
-0
+1
 
 Auditoría del 2026-09-29 aprobada y contador reseteado a 0 (venían 4 HUs desde
 el 2026-09-27: HU-10, HU-11, HU-12 y HU-13; el contador del estado decía 2 y el
 disco decía 4 — el número que dispara la auditoría es el único valor del marco
 que ningún check verifica). Umbral 3: a la tercera HU cerrada, la Decidora
 vuelve a correr y ahora el alcance lo verifica `auditoria_completa`.
+
+Desde el reset cierra HU-14 (deuda de HU-07). `auditoria_completa` va a
+avisar hasta la próxima corrida —HU-14 no estaba en el alcance del reporte
+sellado—: es el comportamiento diseñado, no un hueco.

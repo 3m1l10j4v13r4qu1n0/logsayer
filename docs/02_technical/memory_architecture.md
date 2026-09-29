@@ -19,7 +19,7 @@ una sexta capa: no reemplaza las 5 capas, las indexa.
 ## Fuente
 
 - Origen: `inbox/_done/feelback_agente_grafo_memoria_motor_memoria_2026_09_28.md` (recibido el 2026-09-28)
-- Adaptação: el documento de origen propone 13 fases de roadmap y un índice en la raíz
+- Adaptación: el documento de origen propone 13 fases de roadmap y un índice en la raíz
   de `docs/`. Se corrigieron tres premisas suyas; ver "Lo que no se toma".
 
 ## Qué establece
@@ -42,8 +42,7 @@ DOCUMENTOS  ──parse──▶  METADATOS  ──▶  ÍNDICE  ──▶  RETR
 
 1. **Metadatos** — frontmatter por documento. Contrato mínimo, ver abajo.
 2. **Índice** — `docs/00_memory_index.md`, generado por `logsayer memory index`.
-   Un `.md` por documento, una línea por documento. Es un artefacto: se regenera, no
-   se edita.
+   Un único `.md`, una línea por documento. Es un artefacto: se regenera, no se edita.
 3. **Retriever** — `logsayer memory search "<consulta>"`. Tokeniza la consulta,
    intersecta con las tags, ordena y corta. Sin LLM y sin embeddings.
 4. **Contexto** — lo que el agente lee primero. El contenido completo se recupera
@@ -76,7 +75,7 @@ Por eso no entra:
 | `nivel` | implícito en la ruta: `01_global` nivel 0, `02_technical` nivel 1, `HU-XX` nivel 2 |
 | `estado` | ya está en el header estándar, y `header_capa1` lo valida |
 | `peso` | lo escribiría un LLM y se pudre; el ranking se deriva, no se declara |
-| `relaciones` | maintenance manual garantizada; solo se conservan las que el CLI puede verificar (`## Fuente`) |
+| `relaciones` | mantenimiento manual garantizada; solo se conservan las que el CLI puede verificar (`## Fuente`) |
 
 Duplicar en el frontmatter lo que la ruta ya dice crea dos verdades que divergen. El
 primer día que `nivel` y la ruta no coincidan, nadie sabe cuál manda.
@@ -179,6 +178,14 @@ Si el subgrafo deja afuera un documento relevante, la auditoría pasa por omisi�
 marco miente. Por eso la Truthsayer usa `search` para **ordenar su arranque**, pero el
 alcance de la auditoría sigue siendo `docs/04_user_stories/` completo. El índice es un
 atajo de lectura, no un recorte de alcance.
+
+Una promesa escrita en el prompt no alcanza: la auditoría del 2026-09-27 cubrió cuatro
+de las once HUs que había en disco, sin que nada lo señalara, y el marco quedó
+mintiendo con los checks en verde. La fase 9 convierte la garantía en artefacto:
+`logsayer audit run` scaffoldea una fila por HU contada en el disco, y el check
+`auditoria_completa` avisa en `warn` si alguna queda sin veredicto. El alcance pasó de
+ser una instrucción a ser una tabla parseable — ver
+`docs/02_technical/audit_protocol.md` (D20).
 
 ### Lo que no se toma
 

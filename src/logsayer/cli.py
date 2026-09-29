@@ -433,17 +433,29 @@ def audit_run(
             help="Reinicia el contador de HUs en project_state.md tras la corrida.",
         ),
     ] = False,
+    only: Annotated[
+        str | None,
+        typer.Option(
+            "--hu",
+            help="Emite el brief de una sola pasada (HU-07).",
+        ),
+    ] = None,
 ) -> None:
     """Genera la estructura del reporte y el prompt; el resultado
     lo produce la Decidora."""
     try:
         root = require_logsayer_root(Path.cwd())
-        report = audit.run_audit(root)
+        artifact = audit.run_audit(root, only=only)
         if reset_counter:
             project.set_closed_hus(root, 0)
     except (ProjectRootError, audit.AuditError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    typer.echo(f"Estructura y prompt generados en {report.relative_to(root)}")
+    where = artifact.relative_to(root)
+    if only is not None:
+        typer.echo(f"Brief de la pasada {only} generado en {where}")
+        typer.echo("El alcance no cambia: es el input de repetir una fila.")
+        return
+    typer.echo(f"Estructura y prompt generados en {where}")
     if reset_counter:
         typer.echo("Contador de HUs reiniciado a 0 en project_state.md.")
     else:

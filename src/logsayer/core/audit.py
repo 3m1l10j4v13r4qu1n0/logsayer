@@ -401,8 +401,14 @@ def run_audit(root: Path, only: str | None = None) -> Path:
     date = datetime.now().strftime("%Y-%m-%d")
     if only is not None:
         item = hu_ids_item(root, only)
+        current = last_audit(root)
         return _write_prompt(
-            root, date, f"audit_{date}-{only.lower()}", [item]
+            root,
+            date,
+            f"audit_{date}-{only.lower()}",
+            [item],
+            report_name=current.name if current is not None else None,
+            single=True,
         )
 
     previous = last_audit(root)
@@ -437,6 +443,7 @@ def _write_prompt(
     stem: str,
     items: list[HuItem],
     report_name: str | None = None,
+    single: bool = False,
 ) -> Path:
     audits_dir = root / AUDITS_DIR
     audits_dir.mkdir(parents=True, exist_ok=True)
@@ -448,6 +455,7 @@ def _write_prompt(
             project_name=project_name(root),
             items=items,
             report_name=report_name,
+            single=single,
         )
     )
     return prompt

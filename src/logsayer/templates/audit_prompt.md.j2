@@ -2,10 +2,16 @@
 
 Vas a auditar spec vs código real del proyecto «{{ project_name }}».
 
+{% if single %}
+Esta es la **pasada de {{ items[0].hu }}**, reemitida para repetirla. El alcance
+de la auditoría sigue siendo el del reporte completo: acá hay una sola HU, y el
+resto no se salta — espera a que termine el resto del bucle.
+{% else %}
 El alcance lo decidió el CLI: {{ items|length }} HU(s) en
 `docs/04_user_stories/`. No agregues HUs ni las saltes. Si una fila queda sin
 veredicto, `logsayer check` lo va a señalar y la auditoría va a estar incompleta
 por omisión.
+{% endif %}
 
 ## Qué NO verificás (ya es mecánico)
 
@@ -39,6 +45,7 @@ se repite sola: no arrastres a las demás.
 
 {% endfor %}
 
+{% if not single %}
 ## Síntesis
 
 Después de las pasadas, y **solo si algún veredicto cambió en esta corrida**:
@@ -52,10 +59,21 @@ Después de las pasadas, y **solo si algún veredicto cambió en esta corrida**:
 La síntesis es juicio sobre prosa: no es verificable mecánicamente y no es una
 garantía. Detecta contradicciones evidentes entre veredictos; una contradicción
 que ninguna pasada individual registró, no la va a ver.
+{% endif %}
 
 ## Cierre
 
-El reporte queda en `docs/06_audits/{{ report_name }}`. Completá la columna
-**Evidencia** de cada fila que auditaste. Al terminar, corré
-`logsayer check` y confirmá que `auditoria_completa` está en verde antes de
-proponer el reset del contador.
+{% if report_name %}
+Completá la columna **Evidencia** {% if single %}de la fila de {{ items[0].hu }} {% endif %}en `docs/06_audits/{{ report_name }}`. No agregues filas: el alcance lo cuenta el CLI.
+{% else %}
+No hay reporte todavía: corré `logsayer audit run` para scaffoldear la tabla, y
+completá ahí la columna **Evidencia** de la fila de {{ items[0].hu }}.
+{% endif %}
+
+{% if single %}
+`auditoria_completa` sigue en aviso mientras haya filas vacías: eso es lo
+esperado en una pasada repetida, no un fallo.
+{% else %}
+Al terminar, corré `logsayer check` y confirmá que `auditoria_completa` está en
+verde antes de proponer el reset del contador.
+{% endif %}

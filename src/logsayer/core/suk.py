@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from logsayer.config import LogsayerConfig
-from logsayer.core import memory
+from logsayer.core import audit, memory
 from logsayer.core.checks import CheckResult, fail, ok, warn
 from logsayer.core.freshness import doc_timestamp
 from logsayer.core.inbox import age_days, inbox_dir, is_stale, pending
@@ -227,6 +227,38 @@ def check_layer1_headers(root: Path) -> CheckResult:
     return ok("header_capa1")
 
 
+def check_audit_coverage(root: Path) -> CheckResult:
+    """La auditoría cubrió cada HU que el disco tiene (D14, D20).
+
+    El alcance lo emite el CLI como tabla de ítems y la Decidora llena
+    veredictos; este check diffea una cosa contra la otra. Sin él, "el subgrafo
+    dejó afuera una HU" es indistinguible de "el agente se olvidó", que es
+    justamente el fallo silencioso que D14 existe para cerrar.
+
+    Es `warn` y no `fail` (D7): un reporte a medio llenar es un estado legítimo
+    mientras la Decidora trabaja, y bloquearlo la haría odiar el check. El
+    corte real es el reset del contador, que es decisión del humano.
+    """
+    report = audit.last_audit(root)
+    if report is None:
+        return ok("auditoria_completa", "sin auditoría (opcional)")
+    if not audit.has_worklist(report.read_text(encoding="utf-8")):
+        return ok(
+            "auditoria_completa",
+            f"{report.name} es anterior al worklist; no se mide cobertura",
+        )
+    pending = audit.pending_verdicts(root, report)
+    if pending:
+        listing = ", ".join(pending)
+        return warn(
+            "auditoria_completa",
+            f"{len(pending)} HU(s) sin veredicto en {report.name}: {listing}"
+            "\n   → la auditoría pasó por omisión; completá la fila o "
+            "repetí la pasada con: logsayer audit run --hu <HU>",
+        )
+    return ok("auditoria_completa")
+
+
 def check_state_freshness(root: Path) -> CheckResult:
     """El snapshot no puede quedar viejo sin que nadie lo note (F7).
 
@@ -300,4 +332,5 @@ def run_suk(root: Path) -> list[CheckResult]:
         check_layer1_headers(root),
         check_inbox(root, config),
         check_state_freshness(root),
+        check_audit_coverage(root),
     ]

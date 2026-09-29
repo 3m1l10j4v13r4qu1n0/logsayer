@@ -255,7 +255,7 @@ def doc_new(
     """Crea un documento de Capa 1 con header estándar. Para HUs: spec new."""
     try:
         root = require_logsayer_root(Path.cwd())
-        target, archived = specs.create_doc(root, layer, name, from_path)
+        created = specs.create_doc(root, layer, name, from_path)
     except (
         ProjectRootError,
         inbox.InboxError,
@@ -263,9 +263,11 @@ def doc_new(
         specs.SpecError,
     ) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    typer.echo(f"Documento creado en {target.relative_to(root)}")
-    if archived is not None:
-        typer.echo(f"Origen archivado en {archived.relative_to(root)}")
+    typer.echo(f"Documento creado en {created.target.relative_to(root)}")
+    if created.archived is not None:
+        typer.echo(f"Origen archivado en {created.archived.relative_to(root)}")
+        if created.notice is not None:
+            typer.echo(f"Aviso: {created.notice}")
         typer.echo(
             "El contenido lo deriva el subagente Mentat: "
             "el CLI solo lo scaffoldeó."

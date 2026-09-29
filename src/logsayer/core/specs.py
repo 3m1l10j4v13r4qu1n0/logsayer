@@ -7,6 +7,7 @@ función de este módulo redacta Capa 1 a partir de un archivo externo.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from datetime import date as date_cls
 from pathlib import Path
 
@@ -60,17 +61,32 @@ def create_hu(root: Path, hu: str) -> Path:
     return target
 
 
+@dataclass(frozen=True)
+class CreatedDoc:
+    """Lo que `doc new` deja en el disco, más lo que tiene que mostrar.
+
+    `notice` es el aviso de conversión que la banda produce para un original no
+    markdown. Vive en el bloque `## Fuente` del documento, pero eso lo lee la
+    Decidora después: el humano que tipeó el comando necesita verlo en la
+    terminal (spec §3, HU-14).
+    """
+
+    target: Path
+    archived: Path | None
+    notice: str | None
+
+
 def create_doc(
     root: Path,
     layer: str,
     name: str,
     from_path: str | None = None,
-) -> tuple[Path, Path | None]:
+) -> CreatedDoc:
     """Crea un documento de Capa 1 (no-HU) con header estándar y bloque Fuente.
 
-    Devuelve (documento, original archivado en `inbox/_done/`). Con `from_path`
-    el original se mueve — nunca se borra — y su procedencia queda registrada en
-    el documento, que pasa a ser la versión de referencia (spec §3).
+    Con `from_path` el original se mueve — nunca se borra — y su procedencia
+    queda registrada en el documento, que pasa a ser la versión de referencia
+    (spec §3).
 
     El frontmatter `tags` queda scaffoldeado con las tags derivadas del nombre:
     el CLI propone el metadata y el Mentat lo ajusta (D8, D13).
@@ -107,5 +123,5 @@ def create_doc(
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(rendered, encoding="utf-8")
-    return target, archived
+    return CreatedDoc(target=target, archived=archived, notice=source_note)
 

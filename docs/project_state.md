@@ -27,16 +27,18 @@ spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: redactar la sección `[0.8.0]` del CHANGELOG con las fases 8
-y 9 y bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag `v0.7.0`
-en `087a482`, el 2026-09-30); fase 3 restante (adaptadores
-copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad: presets, más
-agentes). Dos deudas de código de la auditoría del 2026-09-29 siguen abiertas:
-el contador de HUs del estado no lo verifica ningún check, y
-`audit run --reset-counter` scaffoldea un reporte nuevo con el alcance entero
-vacío antes de resetear. La cola vive en
-`inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
-desplazada: solo entra si duele.
+Pendientes, en orden: la deuda de publicación por CI, que sale del release de
+0.7.0 y es lo único que hoy ata el tag a una shell con token (D28, fila D-09 de
+la cola); redactar la sección `[0.8.0]` del CHANGELOG con las fases 8 y 9 y
+bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag `v0.7.0` en
+`087a482`, el 2026-09-30), cuyo release mueve `main` (D27); fase 3 restante, que
+ya no es elegir un adaptador sino uno solo, decidido: Copilot (D26); fase 7
+(comunidad: presets, más agentes), que sigue sin diseño y es la única decisión
+que falta. Dos deudas de código de la auditoría del 2026-09-29 siguen abiertas:
+el contador de HUs del estado no lo verifica ningún check, y `audit run
+--reset-counter` scaffoldea un reporte nuevo con el alcance entero vacío antes
+de resetear. La cola vive en `inbox/feedback_deudas_auditoria.md`. La fase 10
+(frontmatter extendido) sigue desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -65,6 +67,9 @@ desplazada: solo entra si duele.
 - D23 — La síntesis lee solo la tabla de veredictos, y solo si algún veredicto cambió: abrir HUs para sintetizar sería una segunda pasada entera.
 - D24 — La superficie de permisos se declara con la unidad que la herramienta soporta: opencode tiene bloque `permissions:` por acción/recurso/efecto, Claude Code solo el allowlist `tools` (granularidad por herramienta). No se escribe un campo que la herramienta pueda ignorar en silencio, y `settings.json` no se genera porque es de sesión.
 - D25 — Un aviso que solo vive en el documento generado no avisa a quien lo pidió: `doc new` muestra el aviso de conversión por stdout, además de dejarlo en el bloque `## Fuente`.
+- D26 — La fase 3 se cierra con un solo adaptador, Copilot: es el de mayor uso y su convención (`AGENTS.md` más instrucciones por path con `applyTo`) es la más expresiva. No se implementan los cuatro que el registro enumera a la vez: `hermes` no tiene ni un referente verificable, y cuatro adaptadores a medio hacer son cuatro superficies de permisos que la herramienta puede ignorar en silencio (D24).
+- D27 — El release de 0.8.0 mueve `main`: PR `develop` → `main` y el tag semver sobre ese merge. `main` quedó en 0.6.0 solo porque era ancestro estricto de `develop` y no había forma de que contuviera únicamente la fase 6; con las fases 8 y 9 ya integradas, el tag y el contenido de `main` vuelven a decir lo mismo y el desfase termina acá.
+- D28 — La publicación es manual hasta que exista CI: el repo no tiene `.github/workflows/`, así que `v0.7.0` salió de una shell con `UV_PUBLISH_TOKEN` y no hay ruta automatizada. La deuda entra como fila propia de la cola y no solo en la bitácora, porque la bitácora no es la cola de trabajo entre sesiones y `bandeja_entrada` mide antigüedad, no existencia: sin fila, ningún check la va a avisar.
 
 ## HUs cerradas desde la última auditoría
 

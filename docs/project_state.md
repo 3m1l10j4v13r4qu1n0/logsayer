@@ -27,17 +27,28 @@ spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: la deuda de publicación por CI, que sale del release de
-0.7.0 y es lo único que hoy ata el tag a una shell con token (D28, fila D-09 de
-la cola); redactar la sección `[0.8.0]` del CHANGELOG con las fases 8 y 9 y
-bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag `v0.7.0` en
-`087a482`, el 2026-09-30), cuyo release mueve `main` (D27); la implementación de
-la fase 7, cuyo diseño quedó escrito en la spec §4 y todavía no toca código
-(D29, D30, D31); fase 3 restante, que ya no es elegir un adaptador sino uno
-solo, decidido: Copilot (D26). Dos deudas de código de la auditoría del
-2026-09-29 siguen abiertas: el contador de HUs del estado no lo verifica ningún
-check, y `audit run --reset-counter` scaffoldea un reporte nuevo con el alcance
-entero vacío antes de resetear. La cola vive en
+CI desde el PR #16 (merge `fb7e604`): `.github/workflows/ci.yml` corre la
+batería en cada PR a `develop` y en cada push a `develop` sobre 3.11, 3.12 y
+3.13 — verificado en verde sobre las tres (run `36743442993`), y
+`.github/workflows/publish.yml` publica en PyPI cuando se pushea un tag semver,
+previa batería y previa verificación de que el tag declara la versión de
+`pyproject.toml` y la de `__version__`. **La fila D-09 está a medias, y por
+eso el orden sigue igual**: la batería existe, la publicación la prueba el tag
+`v0.8.0` del release siguiente. Ese secreto ya está creado en el repo.
+
+Pendientes, en orden: redactar la sección `[0.8.0]` del CHANGELOG con las fases
+8 y 9 y bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag
+`v0.7.0` en `087a482`, el 2026-09-30), cuyo release mueve `main` (D27); las dos
+deudas de código de la auditoría del 2026-09-29 — el contador de HUs del estado
+no lo verifica ningún check, y `audit run --reset-counter` scaffoldea un
+reporte nuevo con el alcance entero vacío antes de resetear; la regeneración de
+`examples/hello-logsayer/`, que hoy promete una salida real del CLI que no es
+(D10, y deliberadamente al final del ciclo); la implementación de la fase 7,
+cuyo diseño quedó escrito en la spec §4 y todavía no toca código (D29, D30,
+D31); fase 3 restante, que ya no es elegir un adaptador sino uno solo, decidido:
+Copilot (D26). Y una deuda que se acaba de sumar: el token de PyPI sigue siendo
+una credencial de larga vida en el repo, así que Trusted Publishing (OIDC)
+queda para después del release de 0.8.0, no mezclado con él. La cola vive en
 `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
 desplazada: solo entra si duele.
 
@@ -74,6 +85,9 @@ desplazada: solo entra si duele.
 - D29 — El idioma del contenido no es eje del preset: detrás de una clave `lang` hay i18n de los 17 templates —con los 8 de adaptadores, que además difieren entre opencode y Claude Code— y no hay ninguna bandera de idioma en el CLI. Queda fuera de la v1 y el idioma es decisión de proyecto, que es lo que el propio `AGENTS.md` generado ya dice: superficie pública en inglés, contenido generado en el idioma del proyecto. Si entra alguna vez, entra como fase propia.
 - D30 — `init` declara y `agent add` ejecuta: el preset escribe `[adapters] enabled` y el único comando que genera archivos de adaptador sigue siendo `agent add`. La razón es dura y no es de gusto: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir (D4) y podría pisar subagentes editados por el usuario. La distancia entre declarar y ejecutar la reconcilia el check `adaptadores_declarados`, que avisa y no corrige.
 - D31 — Los umbrales se quedan en `[logsayer]` y no se mueven: cambiar la tabla a `[thresholds]` haría que todo proyecto ya scaffoldeado dejara de encontrar sus umbrales y volviera a los defaults **en silencio**, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración". `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, así que el cambio no rompe nada y no obliga a migrar archivos versionados de los usuarios.
+- D32 — La CI corre sobre la matriz que declara el paquete: 3.11, 3.12 y 3.13 son las que dicen `requires-python` y los classifiers, así que la batería corre en todas ellas o la CI estaría declarando menos que el paquete. Y `ruff format --check` queda **fuera** de la puerta: hoy quiere reformatear 34 archivos, y un gate que arranca rojo es deuda nueva.
+- D33 — El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo: D11 ("la publicación es un hecho verificado, no una intención") vuelto mecanismo, y convierte el fallo de "un paquete publicado que miente" en "un corte con mensaje". El token sigue siendo una credencial de larga vida en el repo — Trusted Publishing (OIDC) es el cierre pendiente y tiene fila propia, aparte del release.
+- D34 — `examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora: promete ser salida real del CLI, así que cualquier cambio en la superficie lo vuelve falso, y las cuatro deudas que quedan (D-01, D-02, D-07, D-08) caen exactamente sobre sus líneas. Editarlo hoy a mano sería hacer trabajo que se tira.
 
 ## HUs cerradas desde la última auditoría
 

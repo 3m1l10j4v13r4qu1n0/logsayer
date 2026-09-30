@@ -78,12 +78,36 @@ inbox_max_age_days = 14                 # días sin ubicar en inbox/ → avisar 
 | Auditoría | HUs cerradas (Decidora de Verdad) | Progreso del proyecto, no de la sesión — evita auditar sesiones de debugging que no cerraron nada |
 | Antigüedad en `inbox/` | Días sin ser ubicado (Suk Doctor) | Un documento que nadie ubica deja de ser información y pasa a ser ruido: el costo lo paga el proyecto entero, no una sesión. Días, no líneas ni % de contexto, porque lo que envejece es la *vigencia* del documento externo frente al estado actual, no su volumen |
 
+### Presets de proyecto (`init --preset <nombre>`, fase 7)
+
+Un preset es un **bundle de convenciones** con dos ejes: qué adaptadores deja declarados y qué umbrales pone. Se materializa una sola vez, en `init`; a partir de ahí el proyecto se gobierna con su propio `logsayer.toml`.
+
+```toml
+[project]
+preset = "minimal"   # qué preset originó este archivo — informativo, lo vigila el check preset_conocido
+
+[adapters]
+enabled = ["claude"]   # qué adaptadores declara el preset; el que los genera es `agent add`
+```
+
+**La forma del archivo no se mueve.** Los cuatro umbrales siguen en `[logsayer]` con las mismas claves: cambiar el nombre de la tabla rompería en silencio todo proyecto ya scaffoldeado, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración" y volvería a los defaults — el peor modo de falla posible para un framework de umbrales. `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, y el umbral no se toca.
+
+**Precedencia, y es más chica de lo que parece:** `--preset` elige el preset; cada clave que el preset declara sobreescribe el default del `dataclass`, y las que omite caen al default. No hay un tercer escalón porque `init` no expone banderas de umbral, y la que sería natural —el idioma del contenido— no es del framework (§10). El preset `default` es entonces literalmente "no sobreescribir nada", que es lo que lo hace el baseline de los tests.
+
+**El preset es un snapshot, no una herencia viva.** `init` copia los valores al `logsayer.toml` y el preset deja de existir para ese proyecto. Así no hay que resolver "qué pasa si el preset cambia en la próxima versión", y el usuario edita el TOML sin sorpresas. El precio es que actualizar logsayer no actualiza los umbrales de un proyecto ya scaffoldeado: ver el riesgo en §10.
+
+**Los presets son datos, no código**: TOML dentro del paquete (`src/logsayer/presets/<nombre>.toml`), leídos con `importlib.resources`. Cada uno se valida en los tests contra el mismo `LogsayerConfig` que lee el TOML del proyecto, así que un preset roto no puede llegar al scaffold. Agregar un preset no toca lógica.
+
+**Se distributionan dos.** `default` (comportamiento de hoy: umbrales actuales, `enabled` vacío) y `minimal` (un solo adaptador, umbrales más laxos, para probar la herramienta o proyectos chicos). `strict` —todos los adaptadores y umbrales exigentes— queda fuera, y el motivo queda escrito: un preset sin caso real es superficie para mantener. Tampoco entran los presets por lenguaje o framework, los presets definidos por el usuario ni la composición (`--preset a,b`): eso son las "más agentes según demanda" de la fila 7 del roadmap, y se agregan cuando alguien los pida.
+
+**Dos checks hacen legales las dos claves nuevas** (D13: un valor entra solo si un comando lo consume mecánicamente). `preset_conocido`, `warn` unidireccional cuando el preset declarado **no existe en el paquete instalado**, que es el fallo real de un snapshot. `adaptadores_declarados`, `warn` cuando un nombre de `enabled` no está en `SUPPORTED` —o cuando sí, pero los archivos del adaptador no existen en el proyecto, que es la distancia entre declararlo y ejecutar `agent add`. Ninguno de los dos corrige: avisan, que es lo que hace el resto del CLI.
+
 ---
 
 ## 5. Comandos (con alias plano)
 
 ```
-logsayer init <project-name>                # scaffoldea docs/ + config + AGENTS.md
+logsayer init <project-name> [--preset <nombre>]  # scaffoldea docs/ + config + AGENTS.md
 logsayer init --here                        # scaffoldea en el proyecto existente, en la raíz
 
 logsayer agent add <opencode|claude|copilot|cursor|gemini|hermes>   # genera adaptador por agente
@@ -103,6 +127,8 @@ logsayer truthsayer audit run               # alias: logsayer audit run
 logsayer truthsayer audit status            # alias: logsayer audit status
 logsayer fremen verify                      # alias: logsayer process check
 ```
+
+**`init` no genera adaptadores.** Con `--preset`, el preset declara cuáles van en `[adapters] enabled` del `logsayer.toml`; ejecutarlos sigue siendo `logsayer agent add <agente>`, el único comando que escribe archivos de adaptador. La frontera es deliberada: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir lo que ya está (D4) y podría pisar subagentes que el usuario editó. Lo que reconcilia declaración y ejecución es el check `adaptadores_declarados` (§4), no `init`. En modo adopt, si el `logsayer.toml` ya existe, `--preset` no se aplica y `init` lo avisa: el TOML del proyecto manda, y aplicar el preset a medias sería peor que no aplicarlo.
 
 **Superficie de ingreso de documentos (Capa 1).** `inbox` a secas lista lo que está esperando ubicación; `inbox add` es el único comando que toca archivos del usuario: mueve el archivo que el humano le señaló a `inbox/` y nada más. `doc route` imprime la tabla de decisión (entrada → capa → destino → ¿se versiona?) sin escribir nada; con argumento devuelve los candidatos para ese archivo, y decide solo con señal inequívoca (§3). `doc new <capa> <nombre>` scaffoldea un documento de Capa 1 con el header estándar; las capas aceptadas son `global` (`docs/01_global/`) y `technical` (`docs/02_technical/`) — para una HU puntual el comando es `spec new <HU>`, que ya existe, y la tabla de ruteo lo indica. Con `--from <archivo>` deja el bloque `## Fuente` completo y mueve el original a `inbox/_done/`.
 
@@ -238,7 +264,7 @@ flowchart TD
 | **4 — Validación** | `doctor`/`check`, detección de capas mezcladas |
 | **5 — Documentación y publicación** | README con disclaimer, PyPI, MIT, casos de ejemplo |
 | **6 — Ingreso de documentos** | `inbox/` + `inbox add`, `doc route`, `doc new` con header estándar, check `bandeja_entrada`, Routing table en README |
-| **7 — Comunidad** | Presets, más agentes según demanda |
+| **7 — Comunidad** | Presets de proyecto (`init --preset`): `default` y `minimal`, como TOML dentro del paquete y con la regla de snapshot (§4). **Diseño escrito en §4, implementación pendiente.** Más agentes por demanda |
 
 ---
 
@@ -249,6 +275,8 @@ flowchart TD
 - **La detección de "documentos huérfanos" por mención no es mecánica**: el estado es prosa libre, así que un check que busca "el nombre del doc aparece en el estado o en un logbook" produce falsos positivos permanentes en `01_global/` (visión, alcance — nunca se citan) y deja de ser determinista, que es la promesa de un bot. La coherencia entre Capa 1 y Capa 2 es trabajo de la Decidora (§13.4.2), no de Suk.
 - **Determinismo del audit**: como la auditoría HU-vs-código la hace un subagente (no el CLI directamente), el resultado depende del agente que la ejecute. El CLI debe generar la estructura del reporte y el prompt de auditoría, no prometer resultado determinístico — ser honesto sobre esto en la documentación.
 - **No mezclar capas en el propio código del CLI**: la tentación de meter lógica de negocio del framework dentro de `AGENTS.md` generado (en vez de dejarla en el core del CLI) rompe el principio de single source of truth.
+- **Un preset snapshot se desactualiza y el usuario puede no enterarse**: al actualizar logsayer, un proyecto scaffoldeado con `--preset minimal` **no** recibe los valores nuevos del preset, porque `init` los copió una vez. Es el precio de que el TOML sea editable y sin sorpresas, y se asume a conciencia: la alternativa —herencia viva— obligaría a resolver "qué pasa si el preset cambia", que es un problema de migraciones. Se paga de dos formas, ambas mecánicas: el aviso vive en el propio TOML (`[project] preset` es informativo a propósito) y el check `preset_conocido` avisa con `warn` cuando el preset declarado ya no existe en el paquete instalado, nombrando la versión para que se sepa de cuándo quedó.
+- **El idioma del contenido no es del framework**: los 17 templates están en español y no hay bandera de idioma en ninguna parte. Meterla como eje del preset parece una línea de configuración y es i18n de toda la superficie generada, con los 8 templates de adaptadores incluidos, que además cambian de forma entre opencode y Claude Code. Queda fuera de la v1: el idioma del contenido es una decisión de proyecto, y el propio `AGENTS.md` generado ya lo dice — la superficie pública va en inglés, el contenido generado puede ir en el idioma del proyecto. Si alguna vez entra, entra como fase propia y no como clave más del preset.
 
 ---
 
@@ -346,4 +374,6 @@ Fase 9 — Auditoría por pasada (**cerrada**): el alcance de la auditoría deja
 
 Release cortado: **0.7.0 = fase 6**, con el tag `v0.7.0` en `087a482` (el merge de la auditoría del 2026-09-28: último commit antes de que el diseño de la fase 8 entre a `develop`), publicado el 2026-09-30; y **0.8.0 = fases 8 y 9**, que es lo que sigue. La fase 6 se integró en `develop` el 2026-09-25 (`db35a63`), que es la fecha que declara el changelog para 0.7.0. Verificado en el paquete publicado: expone `inbox` y `doc` y no expone `memory`. Lo previo en PyPI era 0.6.0 (2026-09-25).
 
-Pendientes declarados, en orden: redactar `[0.8.0]` en el changelog con las fases 8 y 9 y bumpear a `0.8.0`; fase 3 restante (adaptadores copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad); fase 10 (frontmatter extendido, solo si duele — quedó desplazada: la fase 9 es la que cierra el modo de falla silencioso).
+Fase 7 — Comunidad (**diseño escrito, implementación pendiente**): `init --preset <nombre>` resuelve un bundle de convenciones y lo materializa una vez en `logsayer.toml`. El preset es un **snapshot, no una herencia viva**: `init` copia los valores y el preset deja de existir para ese proyecto, así que no hay que resolver "qué pasa si el preset cambia en la próxima versión" y el TOML se edita sin sorpresas. Se distributionan `default` y `minimal`, como TOML dentro del paquete y no como código. `init` **no** genera adaptadores: los declara en `[adapters] enabled` y los escribe `agent add`, porque `generate_adapters()` pisa sin preguntar y `init --here` no puede pisar lo que ya está (D4); lo que reconcilia la distancia entre declarar y ejecutar son los checks `preset_conocido` y `adaptadores_declarados`. Los umbrales se quedan en `[logsayer]` y no se mueven (§4). El idioma del contenido **no** es eje del preset: detrás hay i18n de los 17 templates y no hay bandera hoy (§10). Diseño completo en §4.
+
+Pendientes declarados, en orden: la deuda de publicación por CI, que sale del release de 0.7.0 y no tiene aún fila en la spec; redactar `[0.8.0]` en el changelog con las fases 8 y 9 y bumpear a `0.8.0`; la implementación de la fase 7 con el diseño de §4; fase 3 restante, que ya no es elegir un adaptador sino uno solo ya decidido (Copilot, D26); fase 10 (frontmatter extendido, solo si duele — quedó desplazada: la fase 9 es la que cierra el modo de falla silencioso).

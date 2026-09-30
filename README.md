@@ -199,8 +199,10 @@ A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/ad
 ## Roadmap
 
 - **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), opencode/Claude adapters, mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
-- **7:** community presets, more agents on demand (copilot, cursor, gemini, hermes).
-- **8 (current):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable). You are here.
+- **8 (done):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable).
+- **9 (done):** audit by pass — the scope stops being a promise in the prompt and becomes a table the CLI counts, one row per HU on disk, with the `auditoria_completa` check.
+- **7 (pending):** community presets, more agents on demand (copilot, cursor, gemini, hermes).
+- **10 (deferred):** extended frontmatter — it only lands if it hurts.
 
 ## Acknowledgment & license
 

@@ -26,6 +26,7 @@ class LogsayerConfig:
     session_close_context_threshold: float = 0.70
     bitacora_max_lines: int = 400
     audit_threshold_hus: int = 3
+    inbox_max_age_days: int = 14
 
     @property
     def context_threshold_percent(self) -> int:
@@ -55,8 +56,15 @@ class LogsayerConfig:
             "bitacora_max_lines",
         )
         hus = _integer(section.get("audit_threshold_hus", 3), "audit_threshold_hus")
+        inbox_age = _integer(
+            section.get("inbox_max_age_days", 14),
+            "inbox_max_age_days",
+        )
+        if inbox_age < 1:
+            raise ValueError("inbox_max_age_days debe ser al menos 1.")
         return cls(
             session_close_context_threshold=threshold,
             bitacora_max_lines=max_lines,
             audit_threshold_hus=hus,
+            inbox_max_age_days=inbox_age,
         )

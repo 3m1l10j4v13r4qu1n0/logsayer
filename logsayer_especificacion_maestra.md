@@ -33,22 +33,31 @@ Este documento reemplaza y consolida: la arquitectura genérica de capas, el pla
 ## 3. Estructura de directorios
 
 ```
-docs/
-├── project_state.md                # Capa 2 — Estado (Navegante)
-├── logbooks/                       # Capa 3 — Bitácora (Reverenda Madre)
-│   ├── 00_index.md
-│   ├── logbook_<fase>_01.md
-│   └── logbook_<fase>_02.md
-├── 01_global/                      # Capa 1 — visión, alcance, reglas de negocio
-├── 02_technical/                   # Capa 1 — decisiones técnicas, modelos, diagramas
-├── 03_process/                     # Capa 5 — DoR, checklist de merge (Fremen)
-├── 04_user_stories/                # Capa 1 — HU-01..HU-N
-│   └── HU-01/
-├── 05_agile_methodology/           # Capa 5 — metodología de trabajo con IA
-└── 06_audits/                      # Capa 4 — Suk Doctor + Decidora de Verdad
+proyecto/
+├── inbox/                          # punto de entrada de Capa 1 — NO es una capa
+│   └── .gitignore                  # ignora su contenido: lo que entra no se versiona
+└── docs/
+    ├── project_state.md            # Capa 2 — Estado (Navegante)
+    ├── logbooks/                   # Capa 3 — Bitácora (Reverenda Madre)
+    │   ├── 00_index.md
+    │   ├── logbook_<fase>_01.md
+    │   └── logbook_<fase>_02.md
+    ├── 01_global/                  # Capa 1 — visión, alcance, reglas de negocio
+    ├── 02_technical/               # Capa 1 — decisiones técnicas, modelos, diagramas
+    ├── 03_process/                 # Capa 5 — DoR, checklist de merge (Fremen)
+    ├── 04_user_stories/            # Capa 1 — HU-01..HU-N
+    │   └── HU-01/
+    ├── 05_agile_methodology/       # Capa 5 — metodología de trabajo con IA
+    └── 06_audits/                  # Capa 4 — Suk Doctor + Decidora de Verdad
 ```
 
 **Lenguaje de la estructura:** los nombres de carpetas y archivos van en inglés — es la superficie pública del framework: paths que invocan los adaptadores por agente y que ven usuarios de cualquier idioma. El contenido de los documentos puede estar en cualquier idioma (por defecto, el framework genera contenido en español). Los prefijos numéricos (`01_`...) son agnósticos de idioma.
+
+**`inbox/` — punto de entrada, no capa.** La banda de entrada vive en la raíz, **fuera de `docs/`**: cualquier `.md` dentro de `docs/` que no pertenezca a una capa dispara `capas_mezcladas` (§13.4.1), así que una bandeja adentro se autovería. No es una capa: no se lee al iniciar sesión, no se versiona (su `.gitignore` propio lo declara, sin tocar el `.gitignore` del proyecto), y su única salida es entrar a Capa 1.
+
+Cubre el caso que el flujo de sesión (§7) no resuelve: llega un documento de otro equipo y hay que decidir a qué capa va. El flujo es siempre el mismo: el CLI mueve y nombra (`inbox add` → `doc route` → `doc new`), el subagente **Mentat** deriva el contenido y decide la capa. Al crear el documento derivado con `--from`, el original se mueve a `inbox/_done/` y su procedencia queda registrada en el bloque `## Fuente` del documento — que por eso es obligatorio, no decorativo.
+
+**El CLI propone, no decide.** `doc route <archivo>` solo clasifica cuando la señal es inequívoca: extensión no markdown (va a la bandeja) o una HU declarada en el nombre. En cualquier otro caso devuelve las filas candidatas y una pista opcional, y la elección la hace Mentat. No existe default a `02_technical/`: un `.md` suelto que en realidad es visión de producto terminaría en la carpeta técnica, que es exactamente el error que este flujo evita (spec §10). Si el nombre choca con un documento de Capa 1 que ya existe, avisa que no duplique en vez de crear un segundo.
 
 ---
 
@@ -59,6 +68,7 @@ docs/
 session_close_context_threshold = 0.70   # % de contexto usado → proponer cierre de sesión
 bitacora_max_lines = 400                 # líneas por archivo atómico antes de particionar
 audit_threshold_hus = 3                  # HUs cerradas desde última auditoría → disparar audit
+inbox_max_age_days = 14                 # días sin ubicar en inbox/ → avisar que la bandeja envejece
 ```
 
 | Umbral | Unidad | Por qué esa unidad |
@@ -66,26 +76,65 @@ audit_threshold_hus = 3                  # HUs cerradas desde última auditoría
 | Cierre de sesión | % de contexto usado (Navegante) | Señal real expuesta por los CLIs de agente (p. ej. `/context` en opencode y Claude Code); alineado con degradación de precisión reportada pasados ~32k tokens |
 | Partición de bitácora | Líneas/tokens del archivo (Reverenda Madre) | El costo lo paga la sesión futura que lo lee, no la sesión actual — no depende del % de uso de hoy |
 | Auditoría | HUs cerradas (Decidora de Verdad) | Progreso del proyecto, no de la sesión — evita auditar sesiones de debugging que no cerraron nada |
+| Antigüedad en `inbox/` | Días sin ser ubicado (Suk Doctor) | Un documento que nadie ubica deja de ser información y pasa a ser ruido: el costo lo paga el proyecto entero, no una sesión. Días, no líneas ni % de contexto, porque lo que envejece es la *vigencia* del documento externo frente al estado actual, no su volumen |
+
+### Presets de proyecto (`init --preset <nombre>`, fase 7)
+
+Un preset es un **bundle de convenciones** con dos ejes: qué adaptadores deja declarados y qué umbrales pone. Se materializa una sola vez, en `init`; a partir de ahí el proyecto se gobierna con su propio `logsayer.toml`.
+
+```toml
+[project]
+preset = "minimal"   # qué preset originó este archivo — informativo, lo vigila el check preset_conocido
+
+[adapters]
+enabled = ["claude"]   # qué adaptadores declara el preset; el que los genera es `agent add`
+```
+
+**La forma del archivo no se mueve.** Los cuatro umbrales siguen en `[logsayer]` con las mismas claves: cambiar el nombre de la tabla rompería en silencio todo proyecto ya scaffoldeado, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración" y volvería a los defaults — el peor modo de falla posible para un framework de umbrales. `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, y el umbral no se toca.
+
+**Precedencia, y es más chica de lo que parece:** `--preset` elige el preset; cada clave que el preset declara sobreescribe el default del `dataclass`, y las que omite caen al default. No hay un tercer escalón porque `init` no expone banderas de umbral, y la que sería natural —el idioma del contenido— no es del framework (§10). El preset `default` es entonces literalmente "no sobreescribir nada", que es lo que lo hace el baseline de los tests.
+
+**El preset es un snapshot, no una herencia viva.** `init` copia los valores al `logsayer.toml` y el preset deja de existir para ese proyecto. Así no hay que resolver "qué pasa si el preset cambia en la próxima versión", y el usuario edita el TOML sin sorpresas. El precio es que actualizar logsayer no actualiza los umbrales de un proyecto ya scaffoldeado: ver el riesgo en §10.
+
+**Los presets son datos, no código**: TOML dentro del paquete (`src/logsayer/presets/<nombre>.toml`), leídos con `importlib.resources`. Cada uno se valida en los tests contra el mismo `LogsayerConfig` que lee el TOML del proyecto, así que un preset roto no puede llegar al scaffold. Agregar un preset no toca lógica.
+
+**Se distributionan dos.** `default` (comportamiento de hoy: umbrales actuales, `enabled` vacío) y `minimal` (un solo adaptador, umbrales más laxos, para probar la herramienta o proyectos chicos). `strict` —todos los adaptadores y umbrales exigentes— queda fuera, y el motivo queda escrito: un preset sin caso real es superficie para mantener. Tampoco entran los presets por lenguaje o framework, los presets definidos por el usuario ni la composición (`--preset a,b`): eso son las "más agentes según demanda" de la fila 7 del roadmap, y se agregan cuando alguien los pida.
+
+**Dos checks hacen legales las dos claves nuevas** (D13: un valor entra solo si un comando lo consume mecánicamente). `preset_conocido`, `warn` unidireccional cuando el preset declarado **no existe en el paquete instalado**, que es el fallo real de un snapshot. `adaptadores_declarados`, `warn` cuando un nombre de `enabled` no está en `SUPPORTED` —o cuando sí, pero los archivos del adaptador no existen en el proyecto, que es la distancia entre declararlo y ejecutar `agent add`. Ninguno de los dos corrige: avisan, que es lo que hace el resto del CLI.
 
 ---
 
 ## 5. Comandos (con alias plano)
 
 ```
-logsayer init <project-name>                # scaffoldea docs/ + config + AGENTS.md
+logsayer init <project-name> [--preset <nombre>]  # scaffoldea docs/ + config + AGENTS.md
 logsayer init --here                        # scaffoldea en el proyecto existente, en la raíz
 
 logsayer agent add <opencode|claude|copilot|cursor|gemini|hermes>   # genera adaptador por agente
 
 logsayer mentat spec new <hu>               # alias: logsayer spec new
 logsayer navigator state show               # alias: logsayer state show
+logsayer navigator memory index             # alias: logsayer memory index
+logsayer navigator memory status            # alias: logsayer memory status
 logsayer reverend-mother log add "…"        # alias: logsayer log add
 logsayer reverend-mother log index          # alias: logsayer log index
+logsayer inbox                              # lista lo pendiente en la bandeja
+logsayer inbox add <archivo>                # mueve un documento externo a inbox/
+logsayer mentat doc route [<archivo>]       # alias: logsayer doc route  (propone, no decide)
+logsayer mentat doc new <capa> <nombre>     # alias: logsayer doc new  (--from <archivo>)
 logsayer suk doctor                         # alias: logsayer check
 logsayer truthsayer audit run               # alias: logsayer audit run
 logsayer truthsayer audit status            # alias: logsayer audit status
 logsayer fremen verify                      # alias: logsayer process check
 ```
+
+**`init` no genera adaptadores.** Con `--preset`, el preset declara cuáles van en `[adapters] enabled` del `logsayer.toml`; ejecutarlos sigue siendo `logsayer agent add <agente>`, el único comando que escribe archivos de adaptador. La frontera es deliberada: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir lo que ya está (D4) y podría pisar subagentes que el usuario editó. Lo que reconcilia declaración y ejecución es el check `adaptadores_declarados` (§4), no `init`. En modo adopt, si el `logsayer.toml` ya existe, `--preset` no se aplica y `init` lo avisa: el TOML del proyecto manda, y aplicar el preset a medias sería peor que no aplicarlo.
+
+**Superficie de ingreso de documentos (Capa 1).** `inbox` a secas lista lo que está esperando ubicación; `inbox add` es el único comando que toca archivos del usuario: mueve el archivo que el humano le señaló a `inbox/` y nada más. `doc route` imprime la tabla de decisión (entrada → capa → destino → ¿se versiona?) sin escribir nada; con argumento devuelve los candidatos para ese archivo, y decide solo con señal inequívoca (§3). `doc new <capa> <nombre>` scaffoldea un documento de Capa 1 con el header estándar; las capas aceptadas son `global` (`docs/01_global/`) y `technical` (`docs/02_technical/`) — para una HU puntual el comando es `spec new <HU>`, que ya existe, y la tabla de ruteo lo indica. Con `--from <archivo>` deja el bloque `## Fuente` completo y mueve el original a `inbox/_done/`.
+
+Ninguno de estos comandos redacta contenido de Capa 1 a partir del archivo: el CLI nombra y ubica, el subagente Mentat deriva (spec §6). El CLI tampoco convierte PDF ni docx — avisa que hay que hacerlo antes, como paso previo y fuera del framework.
+
+**Índice de memoria (capa transversal, no una sexta capa).** `memory index` regenera `docs/00_memory_index.md`, una línea por documento de `docs/`, a partir de la ruta (nivel), del header estándar (fecha · estado) y del frontmatter `tags`; si el documento no declara tags, se derivan del nombre y de la HU citada en `## Fuente`. El índice es un artefacto: se regenera, no se edita a mano. `memory status` informa qué indexa y con cuántas tags — no dictamina frescura, eso es el check `indice_al_dia`. `memory search "<consulta>"` es el retrieval: tokeniza la consulta, la intersecta con las tags del índice, ordena y corta (`--capa` acota a una capa, `--limit` al tope de candidatos; `0` = todos). El ranking son las tags —el acierto exacto pesa más que el prefijo compartido— y a igualdad de puntaje manda el nivel más cercano a la especificación y después la ruta, que es el mismo orden con el que se lee el índice. El retriever **lee el artefacto, no los documentos**: si regenerara o leyera del disco, la frescura no tendría nada que verificar. La frescura la vigila `indice_al_dia`, check de Fremen (Capa 5) que compara el índice contra la fecha de versión de los documentos de Capa 1 —el máximo entre `git log -1` y el mtime— y avisa con `warn` nombrando el más nuevo, nunca con `fail`. Diseño completo en la fase 8 del roadmap.
 
 ---
 
@@ -100,6 +149,13 @@ Un único motor (`logsayer/core/`) + un adaptador por agente (`logsayer/adapters
 - **Hermes / Gemini CLI** → sus convenciones respectivas
 
 **Principio de diseño clave:** la lógica vive en el CLI, no en los archivos de comando por agente. Los archivos que se generan para cada agente son wrappers finos que llaman al CLI (`logsayer log add "…"`), igual que hace Spec Kit con sus `speckit.*` — así se agrega un agente nuevo sin duplicar lógica.
+
+**La superficie declarativa de permisos no es la misma en todos los agentes, y el CLI no la iguala a la fuerza.** El single-writer por capa se declara con la unidad que cada herramienta soporta:
+
+- **opencode**: el bloque `permissions:` del subagente evalúa reglas ordenadas por `action` + `resource` + `effect`. El orden importa: `edit: * deny` tiene que preceder a los `shell … allow`, o la denegación general se come las excepciones. Es el único adaptador donde el alcance por ruta y por comando es una declaración.
+- **Claude Code**: el frontmatter de subagente solo expone `tools` (allowlist de **nombres de herramienta**) y `disallowedTools`. La granularidad es la herramienta, no el recurso: no hay `Edit(<ruta>)` ni `Bash(<comando>)` por subagente. Las reglas por recurso existen en `permissions.allow/ask/deny` de `settings.json`, pero son **de sesión** —alcanzarían a la sesión principal y a los otros roles por igual—, así que logsayer **no las genera**: un archivo de permisos que no se puede acotar al subagente no declara lo que parece declarar. En este adaptador el alcance por ruta queda en el prompt y en las reglas de la sesión, y el template lo dice en vez de dejar que la prosa parezca una garantía.
+
+El criterio que se sigue al agregar un adaptador es no escribir un campo de permiso que la herramienta pueda ignorar en silencio: un campo no aplicado se lee como una garantía y opera como una ausencia. Ver `docs/04_user_stories/HU-14/README.md`.
 
 ---
 
@@ -139,11 +195,13 @@ flowchart TD
 | Evento | Capa afectada | Acción | Requiere aprobación |
 |---|---|---|---|
 | Inicio de sesión | Estado | Lectura obligatoria de `project_state.md` | No |
+| Inicio de sesión | Verificación | `logsayer check` — la sesión arranca con el diagnóstico mecánico, que también reporta si hay documentos sin ubicar en `inbox/` | No |
 | Inicio de sesión (contador alto) | Verificación | Proponer auditoría | Sí, para ejecutarla |
 | Cierre de sesión / commit | Estado | Actualizar snapshot | Sí |
 | Cierre de sesión / commit | Bitácora | Append entrada en el logbook activo | Sí |
 | Logbook activo llena | Bitácora | Crear archivo atómico + actualizar índice | No (mecánico) |
 | Decisión de arquitectura nueva | Especificación | Editar `02_technical/` | Sí |
+| Documento externo en `inbox/` | Especificación | `check` lo reporta; el agente anfitrión se lo delega al subagente Mentat, que decide la capa con `doc route` y crea el documento con `doc new` | Sí, para escribir el documento derivado |
 | ≥ N HUs cerradas | Verificación | Ejecutar auditoría HU-vs-código | Sí |
 
 ---
@@ -155,9 +213,11 @@ flowchart TD
 
 ## Al iniciar sesión
 1. Leer docs/project_state.md (obligatorio, siempre).
-2. Verificar contador de auditoría. Si >= 3 HUs, proponer auditoría
-   (Decidora de Verdad) antes de tomar tarea nueva.
-3. NO leer logbooks/ completa — solo docs/logbooks/00_index.md
+2. Correr logsayer check (mecánico, barato, y reporta
+   documentos sin ubicar en inbox/).
+3. Verificar contador de auditoría. Si >= 3 HUs, proponer
+   auditoría (Decidora de Verdad) antes de tomar tarea nueva.
+4. NO leer logbooks/ completa — solo docs/logbooks/00_index.md
    bajo demanda.
 
 ## Durante la sesión
@@ -166,6 +226,16 @@ flowchart TD
 - Trabajar cada HU leyendo solo su carpeta en 04_user_stories/.
 - Decisión de arquitectura nueva → candidata a entrada de logbook,
   nunca se escribe directo en el estado.
+
+## Documentos entrantes (inbox/)
+- Si logsayer check lista archivos en inbox/, delegar al subagente
+  Mentat: él decide la capa (logsayer doc route) y crea el documento
+  (logsayer doc new). No derivar el contenido en el estado.
+- Si el humano entrega un documento que NO es del proyecto (entrega,
+  contrato, acta), no ubicarlo a mano:logsayer inbox add <archivo>.
+  No mover archivos del proyecto ni código.
+- El CLI no redacta contenido de Capa 1 desde el archivo: mueve y
+  nombra; el Mentat deriva.
 
 ## Al cerrar sesión o commit (requiere aprobación previa)
 - Actualizar project_state.md (snapshot, no acumulativo).
@@ -177,8 +247,9 @@ flowchart TD
 - Disparador: contador >= 3 HUs cerradas.
 - Compara 04_user_stories/ vs código real.
 - Resultado en 06_audits/audit_<fecha>.md.
-- Resetea contador tras aprobación.
+- Resetea el contador tras aprobación.
 ```
+
 
 ---
 
@@ -192,15 +263,20 @@ flowchart TD
 | **3 — Adaptadores multi-agente** | opencode y Claude Code primero (entorno propio), luego los demás por demanda — cada adaptador es un wrapper fino al motor único |
 | **4 — Validación** | `doctor`/`check`, detección de capas mezcladas |
 | **5 — Documentación y publicación** | README con disclaimer, PyPI, MIT, casos de ejemplo |
-| **6 — Comunidad** | Presets, más agentes según demanda |
+| **6 — Ingreso de documentos** | `inbox/` + `inbox add`, `doc route`, `doc new` con header estándar, check `bandeja_entrada`, Routing table en README |
+| **7 — Comunidad** | Presets de proyecto (`init --preset`): `default` y `minimal`, como TOML dentro del paquete y con la regla de snapshot (§4). **Diseño escrito en §4, implementación pendiente.** Más agentes por demanda |
 
 ---
 
 ## 10. Riesgos conocidos de diseño
 
 - **No repetir el "sea of markdown" de Spec Kit**: cada comando debe generar lo mínimo indispensable, no documentos de cientos de líneas por defecto. El límite de tamaño del logbook ya está definido — aplicar el mismo criterio a los templates de HU.
+- **`inbox/` puede volverse un cajón de sastre**: una staging area que nadie procesa es peor que no tenerla, porque aparenta estar ordenada. Dos contramedidas ya incluidas: no se versiona (no es un lugar donde buscar información) y `check` avisa cuando un documento lleva más de `inbox_max_age_days` sin ser ubicado. El umbral es un aviso, no un borrado — borrar archivos del usuario nunca es responsabilidad del CLI.
+- **La detección de "documentos huérfanos" por mención no es mecánica**: el estado es prosa libre, así que un check que busca "el nombre del doc aparece en el estado o en un logbook" produce falsos positivos permanentes en `01_global/` (visión, alcance — nunca se citan) y deja de ser determinista, que es la promesa de un bot. La coherencia entre Capa 1 y Capa 2 es trabajo de la Decidora (§13.4.2), no de Suk.
 - **Determinismo del audit**: como la auditoría HU-vs-código la hace un subagente (no el CLI directamente), el resultado depende del agente que la ejecute. El CLI debe generar la estructura del reporte y el prompt de auditoría, no prometer resultado determinístico — ser honesto sobre esto en la documentación.
 - **No mezclar capas en el propio código del CLI**: la tentación de meter lógica de negocio del framework dentro de `AGENTS.md` generado (en vez de dejarla en el core del CLI) rompe el principio de single source of truth.
+- **Un preset snapshot se desactualiza y el usuario puede no enterarse**: al actualizar logsayer, un proyecto scaffoldeado con `--preset minimal` **no** recibe los valores nuevos del preset, porque `init` los copió una vez. Es el precio de que el TOML sea editable y sin sorpresas, y se asume a conciencia: la alternativa —herencia viva— obligaría a resolver "qué pasa si el preset cambia", que es un problema de migraciones. Se paga de dos formas, ambas mecánicas: el aviso vive en el propio TOML (`[project] preset` es informativo a propósito) y el check `preset_conocido` avisa con `warn` cuando el preset declarado ya no existe en el paquete instalado, nombrando la versión para que se sepa de cuándo quedó.
+- **El idioma del contenido no es del framework**: los 17 templates están en español y no hay bandera de idioma en ninguna parte. Meterla como eje del preset parece una línea de configuración y es i18n de toda la superficie generada, con los 8 templates de adaptadores incluidos, que además cambian de forma entre opencode y Claude Code. Queda fuera de la v1: el idioma del contenido es una decisión de proyecto, y el propio `AGENTS.md` generado ya lo dice — la superficie pública va en inglés, el contenido generado puede ir en el idioma del proyecto. Si alguna vez entra, entra como fase propia y no como clave más del preset.
 
 ---
 
@@ -226,9 +302,9 @@ Python 3.11+ · Typer (CLI) · Jinja2 (templates) · TOML (config) · distribuci
 
 **Rol canon:** computadoras humanas entrenadas en cálculo, análisis, estrategia y procesamiento de información — la respuesta de la humanidad a la prohibición del pensamiento artificial.
 
-**Rol en el framework:** define *qué* se construye y *cómo se valida*. Contiene historias de usuario, casos de uso, modelos de datos, decisiones técnicas y reglas de negocio. Es la capa normativa — el contrato de comportamiento del sistema.
+**Rol en el framework:** define *qué* se construye y *cómo se valida*. Contiene historias de usuario, casos de uso, modelos de datos, decisiones técnicas y reglas de negocio. Es la capa normativa — el contrato de comportamiento del sistema. También es quien deriva el contenido de los documentos que llegan por `inbox/` (spec §3).
 
-**Comando:** `logsayer mentat spec new <hu>` · alias `logsayer spec new`
+**Comandos:** `logsayer mentat spec new <hu>` · alias `logsayer spec new` — `logsayer mentat doc route [<archivo>]` · alias `logsayer doc route` — `logsayer mentat doc new <capa> <nombre>` · alias `logsayer doc new`
 
 ---
 
@@ -260,7 +336,7 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 **Rol canon:** médicos de la Escuela Suk, con condicionamiento imperial que garantiza objetividad absoluta — diagnóstico protocolizado, basado en síntomas medibles, sin intervención de juicio subjetivo.
 
-**Rol en el framework:** chequeo estructural automatizado — tests, linters, validación de que la estructura de carpetas y capas no se mezcló. Detecta si el "paciente" (el proyecto) está sano según parámetros objetivos y medibles.
+**Rol en el framework:** chequeo estructural automatizado — tests, linters, validación de que la estructura de carpetas y capas no se mezcló. Detecta si el "paciente" (el proyecto) está sano según parámetros objetivos y medibles. Es también el canal por el que el proyecto se entera de que hay documentos sin ubicar en `inbox/`: ese reporte es un `warn`, no un `fail`, porque una bandeja con pendientes es un proyecto sano con un pendiente, no un paciente enfermo.
 
 **Comando:** `logsayer suk doctor` · alias `logsayer check`
 
@@ -290,4 +366,16 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 ## 14. Próximo paso concreto
 
-Fase 0/1: crear el repo, `pyproject.toml` con Typer, definir el schema completo de `logsayer.toml`, y el primer `init` funcional. Dogfooding desde el commit uno: la primera HU documentada con este mismo sistema es "implementar `logsayer init`".
+Fase 6 — Ingreso de documentos (**cerrada**): `inbox/` + `inbox add`, tabla de ruteo en `core/routing.py` expuesta por `doc route`, `doc new` con header estándar, check `bandeja_entrada` y la sección "Documentos entrantes" en el `AGENTS.md` generado. Ver `docs/04_user_stories/HU-06/` a HU-09 para el desglose y los criterios de aceptación.
+
+Fase 8 — Memoria seleccionable (**cerrada**): índice generado sobre `docs/` (`logsayer memory index`), contrato de frontmatter reducido a `tags` (D13) y retrieval determinista (`logsayer memory search`) con el check de frescura `indice_al_dia` en Fremen. El grafo es capa transversal de navegación, no una sexta capa (D12); el retrieval ordena la lectura pero nunca recorta el alcance de la auditoría (D14). Diseño en `docs/02_technical/memory_architecture.md`; desglose en HU-10 (índice) y HU-11 (retrieval).
+
+Fase 9 — Auditoría por pasada (**cerrada**): el alcance de la auditoría deja de ser una promesa en el prompt y pasa a ser un artefacto. `logsayer audit run` scaffoldea una tabla con una fila por HU contada en el disco (D20), la Decidora audita cada HU en una pasada acotada a su input, y una síntesis final lee solo la tabla de veredictos y solo si alguno cambió (D23). El check `auditoria_completa` avisa en `warn` si alguna fila quedó vacía, y `logsayer audit run --hu HU-XX` reemite el brief de una pasada sin tocar el alcance (D22). `docs/project_state.md` no invalida la herencia de una HU porque se reescribe en cada cierre de sesión (D21). Diseño en `docs/02_technical/audit_protocol.md`; desglose en HU-12 (alcance) y HU-13 (pasada y síntesis). Origen: la auditoría del 2026-09-27 cubrió 4 de 11 HUs sin que nada lo señalara.
+
+Release cortado: **0.7.0 = fase 6**, con el tag `v0.7.0` en `087a482` (el merge de la auditoría del 2026-09-28: último commit antes de que el diseño de la fase 8 entre a `develop`), publicado el 2026-09-30; y **0.8.0 = fases 8 y 9**, que es lo que sigue. La fase 6 se integró en `develop` el 2026-09-25 (`db35a63`), que es la fecha que declara el changelog para 0.7.0. Verificado en el paquete publicado: expone `inbox` y `doc` y no expone `memory`. Lo previo en PyPI era 0.6.0 (2026-09-25).
+
+Fase 7 — Comunidad (**diseño escrito, implementación pendiente**): `init --preset <nombre>` resuelve un bundle de convenciones y lo materializa una vez en `logsayer.toml`. El preset es un **snapshot, no una herencia viva**: `init` copia los valores y el preset deja de existir para ese proyecto, así que no hay que resolver "qué pasa si el preset cambia en la próxima versión" y el TOML se edita sin sorpresas. Se distributionan `default` y `minimal`, como TOML dentro del paquete y no como código. `init` **no** genera adaptadores: los declara en `[adapters] enabled` y los escribe `agent add`, porque `generate_adapters()` pisa sin preguntar y `init --here` no puede pisar lo que ya está (D4); lo que reconcilia la distancia entre declarar y ejecutar son los checks `preset_conocido` y `adaptadores_declarados`. Los umbrales se quedan en `[logsayer]` y no se mueven (§4). El idioma del contenido **no** es eje del preset: detrás hay i18n de los 17 templates y no hay bandera hoy (§10). Diseño completo en §4.
+
+Publicación automatizada: la batería (`python -m pytest -q`, `ruff check src tests`, `mypy src`) corre en cada PR a `develop` sobre 3.11, 3.12 y 3.13 — las tres versiones que declara `requires-python` —, y un tag semver dispara el job que construye y publica en PyPI. Ese job se corta si el tag no declara la versión de `pyproject.toml` y la de `__version__`: el tag y el contenido tienen que decir lo mismo (D11). El token de PyPI viaja por variable de entorno (`UV_PUBLISH_TOKEN`) y vive en el secreto del repo, nunca en el código. `v0.7.0` salió a mano, desde una shell, y es el último que se publica así.
+
+Pendientes declarados, en orden: redactar `[0.8.0]` en el changelog con las fases 8 y 9 y bumpear a `0.8.0`; la implementación de la fase 7 con el diseño de §4; fase 3 restante, que ya no es elegir un adaptador sino uno solo ya decidido (Copilot, D26); fase 10 (frontmatter extendido, solo si duele — quedó desplazada: la fase 9 es la que cierra el modo de falla silencioso).

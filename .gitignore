@@ -1,4 +1,8 @@
+# Feedback de usabilidad: entra al repo, se lee, y se queda afuera del historial.
+# El framework no escanea la raíz (spec §3), así que el archivo es invisible
+# para `logsayer check` y no debe trackearse.
 feelback_agente.md
+feelback_usabilidad_*.md
 
 # Python
 __pycache__/
@@ -13,3 +17,8 @@ build/
 .ruff_cache/
 coverage.xml
 htmlcov/
+
+# uv genera este lock al correr `uv build` o `uv sync`. El proyecto se
+# distribuye con hatchling y la CI instala con `uv pip install`, así que el
+# lock no lo usa nadie: se ignora en vez de trackear un archivo que miente.
+uv.lock

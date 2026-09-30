@@ -1,0 +1,10 @@
+# Logbook — fase6 (01)
+
+- 2026-09-25 — **Fase 6: ingreso de documentos.** El feedback `feelback_usabilidad_2026-09-25.md` (un `.md` en la raíz es invisible para `logsayer check`) se toma como input de diseño, no como bug de fricción: se decide no escanear la raíz, y en su lugar agregar `inbox/` como punto de entrada declarado (D6).
+- 2026-09-25 — Superficie de comandos: `logsayer inbox add` (único comando que toca archivos del usuario), `logsayer inbox` (lista pendientes), `logsayer doc route` (tabla y candidatos), `logsayer doc new <capa> <nombre> --from` (scaffoldea Capa 1 y archiva el original en `inbox/_done/`). El CLI no redacta contenido ni convierte PDF/docx (D8).
+- 2026-09-25 — Se agrega el nivel `warn` a `CheckResult.status` (`ok | warn | fail`): un documento sin ubicar o un estado desactualizado no cortan el flujo, solo `fail` devuelve exit 1 (D7). Antes, cualquier pendiente hubiera hecho fallar el check.
+- 2026-09-25 — El CLI se corrige a sí mismo: `doc route` ya no clasifica por palabras del nombre ni cae por defecto en `02_technical/`. Devuelve candidatos y una pista, y solo decide con señal inequívoca; Mentat elige. Se agrega detección de duplicados (D10).
+- 2026-09-25 — Checks nuevos de Capa 1: `header_capa1` (header estándar en `01_global/` y `02_technical/`) y `estado_al_dia` (Capa 1 más nueva que el snapshot). Ambos fallaron u avisaron contra este mismo repo el primer día, que es la prueba de que no son decorativos (D9). Se normalizan `mission.md`, `decisions.md` y `tech-stack.md` con el header estándar.
+- 2026-09-25 — `inbox/.gitignore` con `*` se ignoraba a sí mismo y no llegaba al repo: se corrige a `*` + `!.gitignore`, verificado con `git add`.
+- 2026-09-25 — Onboarding público: sección "Incoming documents" en el README y transcript real (`inbox add` → `check` → `doc route` → `doc new`) en `examples/hello-logsayer/README.md`, con output copiado de ejecuciones reales, no inventado. Bump a `0.7.0`.
+- 2026-09-25 — Cierre de sesión: HU-06..HU-09 cerradas (contador de auditoría = 4, umbral 3). Próxima sesión arranca proponiendo auditoría de la Decidora.

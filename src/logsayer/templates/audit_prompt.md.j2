@@ -2,10 +2,78 @@
 
 Vas a auditar spec vs código real del proyecto «{{ project_name }}».
 
-1. Lee cada HU en `docs/04_user_stories/<HU>/README.md`.
-2. Para cada HU, busca en el código real la evidencia de cada criterio
-   de "Cómo se valida".
-3. Escribe el resultado en `docs/06_audits/{{ report_name }}` siguiendo la
-   estructura ya generada. No marques una HU como cumplida sin evidencia,
-   y decílo si no está implementada.
-4. Contexto: {{ closed_hus }} HUs cerradas desde la última auditoría.
+{% if single %}
+Esta es la **pasada de {{ items[0].hu }}**, reemitida para repetirla. El alcance
+de la auditoría sigue siendo el del reporte completo: acá hay una sola HU, y el
+resto no se salta — espera a que termine el resto del bucle.
+{% else %}
+El alcance lo decidió el CLI: {{ items|length }} HU(s) en
+`docs/04_user_stories/`. No agregues HUs ni las saltes. Si una fila queda sin
+veredicto, `logsayer check` lo va a señalar y la auditoría va a estar incompleta
+por omisión.
+{% endif %}
+
+## Qué NO verificás (ya es mecánico)
+
+Tu trabajo empieza donde termina lo mecánico. No gastes esfuerzo en esto:
+
+| Nivel | Quién lo resuelve | Qué es |
+| --- | --- | --- |
+| Estructura | `logsayer check`, `logsayer process check` | capas mezcladas, header, índice fresco, bandeja |
+| Comportamiento del código | `pytest`, `ruff check src tests`, `mypy src` | criterios de aceptación verificables por comando |
+| **Veredicto** | **vos** | si la implementación cumple lo que la HU dice, y si spec y código divergen |
+
+Corré la batería una vez, anotá el resultado con su fecha, y no lo vuelvas a
+derivar HU por HU. El nivel de veredicto es prosa: no es determinable por
+comando, y por eso el resultado de la auditoría lo producís vos.
+
+## Pasadas
+
+Una pasada por HU. Cada una lee únicamente lo que lista abajo, más lo que la
+búsqueda en el código le pida para encontrar la evidencia. Una pasada que falla
+se repite sola: no arrastres a las demás.
+
+{% for item in items %}
+### {{ item.hu }}{% if item.unchanged %} — sin cambios{% endif %}
+
+{% for line in item.brief() %}- {{ line }}
+{% endfor %}
+{% if not item.unchanged %}
+- Veredicto posible: `cumple` / `parcial` / `no cumple`, con evidencia que
+  cite archivo y línea. Sin evidencia, no marques `cumple`.
+{% endif %}
+
+{% endfor %}
+
+{% if not single %}
+## Síntesis
+
+Después de las pasadas, y **solo si algún veredicto cambió en esta corrida**:
+
+1. Leé solo la tabla de veredictos del reporte. No abras HUs ni código: si
+   sospechás una contradicción, no la resuelvas por tu cuenta — registrala
+   nombrando las HUs involucradas y pedí una repasada acotada de esas.
+2. Escribí la sección "Sintesis entre HUs" del reporte. Si no hay hallazgos,
+   escribí "sin contradicciones detectadas".
+
+La síntesis es juicio sobre prosa: no es verificable mecánicamente y no es una
+garantía. Detecta contradicciones evidentes entre veredictos; una contradicción
+que ninguna pasada individual registró, no la va a ver.
+{% endif %}
+
+## Cierre
+
+{% if report_name %}
+Completá la columna **Evidencia** {% if single %}de la fila de {{ items[0].hu }} {% endif %}en `docs/06_audits/{{ report_name }}`. No agregues filas: el alcance lo cuenta el CLI.
+{% else %}
+No hay reporte todavía: corré `logsayer audit run` para scaffoldear la tabla, y
+completá ahí la columna **Evidencia** de la fila de {{ items[0].hu }}.
+{% endif %}
+
+{% if single %}
+`auditoria_completa` sigue en aviso mientras haya filas vacías: eso es lo
+esperado en una pasada repetida, no un fallo.
+{% else %}
+Al terminar, corré `logsayer check` y confirmá que `auditoria_completa` está en
+verde antes de proponer el reset del contador.
+{% endif %}

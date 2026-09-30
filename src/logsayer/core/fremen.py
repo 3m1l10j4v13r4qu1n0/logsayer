@@ -13,9 +13,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from logsayer.config import LogsayerConfig
-from logsayer.core.checks import CheckResult, fail, ok
+from logsayer.core import memory
+from logsayer.core.checks import CheckResult, fail, ok, warn
+from logsayer.core.freshness import doc_timestamp
 from logsayer.core.project import state_file
-from logsayer.core.suk import L1_STORIES, L5_AGILE, L5_PROCESS
+from logsayer.core.suk import L1_GLOBAL, L1_STORIES, L1_TECHNICAL, L5_AGILE, L5_PROCESS
 
 
 def _rel(root: Path, path: Path) -> str:
@@ -81,10 +83,55 @@ def check_definition_of_ready(root: Path) -> CheckResult:
     return ok("definition_of_ready")
 
 
+def check_index_freshness(root: Path) -> CheckResult:
+    """El índice no puede estar viejo sin que nadie lo note.
+
+    Mecánico, como `estado_al_dia`: si un documento de Capa 1 tiene fecha de
+    versión más nueva que `docs/00_memory_index.md`, el retrieval va a seguir
+   devolviendo candidatos de una memoria que ya no existe. Es un `warn` y
+    no un `fail` (D7): un índice viejo se arregla con un comando, no es una
+    estructura rota.
+
+    El alcance es Capa 1 a propósito. `log add` anexa al logbook (Capa 3) y el
+    cierre de sesión reescribe `project_state.md`: si el check los mirara, casi
+    todo cierre dejaría el índice viejo y un aviso que aparece siempre deja de
+    avisar. Las capas que no compiten por ser fuente de verdad de una HU (D15)
+    no cambian lo que el agente tiene que leer primero.
+    """
+    target = memory.index_path(root)
+    if not target.is_file():
+        return ok("indice_al_dia", "sin índice (opcional)")
+    index_ts = doc_timestamp(root, target)
+    newest: tuple[float, str] | None = None
+    count = 0
+    for layer in (L1_GLOBAL, L1_TECHNICAL, L1_STORIES):
+        directory = root / layer
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("*.md")):
+            if not path.is_file():
+                continue
+            stamp = doc_timestamp(root, path)
+            if stamp <= index_ts:
+                continue
+            count += 1
+            if newest is None or stamp > newest[0]:
+                newest = (stamp, _rel(root, path))
+    if newest is not None:
+        more = f" (+{count - 1} más)" if count > 1 else ""
+        return warn(
+            "indice_al_dia",
+            f"Capa 1 cambió después del índice; el más nuevo es {newest[1]}{more}\n"
+            "   → logsayer memory index",
+        )
+    return ok("indice_al_dia")
+
+
 def run_fremen(root: Path) -> list[CheckResult]:
     return [
         check_state_documented(root),
         check_process_dirs(root),
         check_agreement(root),
         check_definition_of_ready(root),
+        check_index_freshness(root),
     ]

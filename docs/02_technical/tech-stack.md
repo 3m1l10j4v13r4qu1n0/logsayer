@@ -1,4 +1,11 @@
-# Stack técnico — logsayer (fuente: spec §11 y `pyproject.toml`)
+# Stack técnico — logsayer
+
+Fecha: 2026-09-25 · Estado: vigente
+
+## Resumen
+
+Stack real del CLI, tomado de spec §11 y de `pyproject.toml`. Es documentación de
+referencia: no se re-deriva, se mantiene en sync con el manifiesto.
 
 | Componente | Elección | Por qué |
 |---|---|---|

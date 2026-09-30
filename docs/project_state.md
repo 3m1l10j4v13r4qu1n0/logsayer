@@ -27,16 +27,19 @@ spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: mergear el PR de HU-14; publicar 0.7.0 con su tag
-`v0.7.0` (el `[Unreleased]` del CHANGELOG está vacío con las fases 8 y 9 sin
-documentar, así que la versión a cortar hay que decidirla); refrescar `AGENTS.md`
-y el roadmap del README, que siguen diciendo "fase 8 (current)"; fase 3 restante
-(adaptadores copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad:
-presets, más agentes). Dos hallazgos de la auditoría siguen abiertos: el
-contador de HUs del estado no lo verifica ningún check, y
-`audit run --reset-counter` scaffoldea un reporte nuevo con el alcance entero
-vacío antes de resetear. La fase 10 (frontmatter extendido) sigue desplazada:
-solo entra si duele.
+Pendientes, en orden: publicar 0.7.0 con su tag `v0.7.0` —el tag se corta en
+`087a482`, el merge de la auditoría del 2026-09-28, que es el último commit
+antes de que el diseño de la fase 8 entre a `develop` y ya declara 0.7.0 sin
+memoria ni auditoría por pasada; en PyPI sigue 0.6.0—; después, redactar la
+sección `[0.8.0]` del CHANGELOG con las fases 8 y 9 (la `[0.7.0]` ya está
+redactada y con la fecha correcta: la fase 6 se integró el 2026-09-25); fase 3
+restante (adaptadores copilot/cursor/gemini/hermes por demanda); fase 7
+(comunidad: presets, más agentes). Dos deudas de código de la auditoría del
+2026-09-29 siguen abiertas: el contador de HUs del estado no lo verifica ningún
+check, y `audit run --reset-counter` scaffoldea un reporte nuevo con el alcance
+entero vacío antes de resetear. La cola vive en
+`inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
+desplazada: solo entra si duele.
 
 ## Decisiones activas
 

@@ -22,14 +22,16 @@ Lo que sigue es lo único que se agrega a la regla global de git: el ciclo y los
 4. `git push -u origin <rama>`
 5. `gh pr create --base develop --head <rama> --title "..." --body "..."`
 6. Merge a `develop` solo con `gh pr merge --merge <n>` (nunca squash) y **solo con aprobación explícita del usuario**. Lo mismo para push, PR y tag: sin aprobación, no se ejecuta.
-7. Release: PR `develop` → `main` + tag semver en el commit de release.
+7. Release: PR `develop` → `main` + tag semver en el commit de release. **El tag publica**: dispara `.github/workflows/publish.yml`, así que a PyPI no se sube a mano. Ese job corre la batería antes de publicar y se corta si el tag no declara la versión de `pyproject.toml` y la de `__version__`.
 
 ### Checklist pre-merge (los tres, en verde)
 - `python -m pytest -q`
 - `ruff check src tests`
 - `mypy src`
 
-Divergencia justificada respecto del checklist genérico global: el proyecto no usa `black` (el formateo es `ruff`, y `black` no está en las dev dependencies de `pyproject.toml`). En consecuencia, `ruff format` es la única verificación de formato.
+La misma batería corre en CI (`.github/workflows/ci.yml`) en cada PR a `develop` y en cada push a `develop`, sobre 3.11, 3.12 y 3.13 — las tres versiones que declara `requires-python` y los classifiers. La corrida local es para no gastar el ciclo del PR; el check del PR es la puerta.
+
+Divergencia justificada respecto del checklist genérico global: el proyecto no usa `black` (el formateo es `ruff`, y `black` no está en las dev dependencies de `pyproject.toml`). En consecuencia, `ruff format` es la única verificación de formato — y **no** es parte de la puerta: hoy `ruff format --check` quiere reformatear 34 archivos, así que agregarlo a CI sería agregar una deuda, no cerrar una.
 
 ### Limpieza
 - `git branch -d <rama>` para las locales ya mergeadas; remotas con `git branch -r --merged develop` y después `git push origin --delete <rama>`.
@@ -94,8 +96,8 @@ Este repo usa logsayer sobre sí mismo (marco de sesiones, spec §7). Los umbral
 - Fase 9 (auditoría por pasada) cerrada: el alcance dejó de ser una promesa en el prompt y pasó a ser una tabla que cuenta el CLI (D20), con el check `auditoria_completa` y `audit run --hu`. Diseño en `docs/02_technical/audit_protocol.md`, desglose en HU-12 y HU-13. La deuda de HU-07 la cerró HU-14 (PR #11, `a4e89d2`).
 - Fase 7 (presets de proyecto) con el **diseño escrito y la implementación pendiente**: `init --preset <nombre>` resuelve un bundle de convenciones y lo materializa una vez en `logsayer.toml` (spec §4 y §5). El preset es un snapshot, no una herencia viva. Del contraste con el código salieron D29 (el idioma no es eje del preset), D30 (`init` declara, `agent add` ejecuta, porque `generate_adapters()` pisa sin preguntar y `init --here` no puede) y D31 (los umbrales no se mueven de `[logsayer]`, o los proyectos existentes volverían a los defaults en silencio).
 - Release 0.7.0 cortado: **0.7.0 = fase 6**, **0.8.0 = fases 8 y 9**. El tag `v0.7.0` está en `087a482` (merge de la auditoría del 2026-09-27, el 2026-09-28), el último commit antes de que el diseño de la fase 8 entre a `develop`. Verificado en ese árbol: declara 0.7.0, no trae `memory` ni `audit_protocol`, y el paquete instalado desde PyPI expone `inbox` y `doc` pero no `memory`. `main` sigue en 0.6.0 a propósito: no hay forma de que contenga solo la fase 6, porque es ancestro estricto de `develop`. El release de 0.8.0 mueve `main` (D27).
-- El repo **no tiene CI**: no existe `.github/workflows/`, así que `v0.7.0` se publicó desde una shell con `UV_PUBLISH_TOKEN` y la batería se corre a mano. Es la fila D-09 de la cola, y va antes del release de 0.8.0.
-- Pendientes: la deuda de CI (D-09); redactar `[0.8.0]` del CHANGELOG con las fases 8 y 9 y bumpear a `0.8.0`; la implementación de la fase 7 con el diseño de la spec §4; fase 3 restante, que ya no es elegir un adaptador sino uno solo, decidido: Copilot (D26); y las dos deudas de código que dejó la auditoría del 2026-09-29 — el contador de HUs sin ningún check que lo verifique, y `audit run --reset-counter` scaffoldeando un reporte con el alcance vacío. La cola vive en `inbox/feedback_deudas_auditoria.md`.
+- El repo **tiene CI** desde la rama `feature/d-09-ci`: `.github/workflows/ci.yml` corre la batería en cada PR a `develop` sobre 3.11, 3.12 y 3.13, y `.github/workflows/publish.yml` publica en PyPI cuando se pushea un tag semver, previa batería y previa verificación de que el tag declara la versión de `pyproject.toml` y la de `__version__`. `v0.7.0` se publicó a mano desde una shell con `UV_PUBLISH_TOKEN` y esa fue la última; el release de 0.8.0 lo hace el job. El token va por variable de entorno (`UV_PUBLISH_TOKEN`) con el secreto `PYPI_API_TOKEN` del repo, nunca en el código.
+- Pendientes: redactar `[0.8.0]` del CHANGELOG con las fases 8 y 9 y bumpear a `0.8.0`; la implementación de la fase 7 con el diseño de la spec §4; fase 3 restante, que ya no es elegir un adaptador sino uno solo, decidido: Copilot (D26); y las dos deudas de código que dejó la auditoría del 2026-09-29 — el contador de HUs sin ningún check que lo verifique, y `audit run --reset-counter` scaffoldeando un reporte con el alcance vacío. La cola vive en `inbox/feedback_deudas_auditoria.md`.
 - `main` tiene el bootstrap y el changelog; `develop` concentra el trabajo; releases con tag semver (`v0.1.0`..`v0.7.0`). Desde 2026-09-27 todo feature entra a `develop` por PR (flujo de la regla global, ver §Flujo de git).
 
 ## Memoria del proyecto

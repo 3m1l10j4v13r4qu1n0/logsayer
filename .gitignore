@@ -17,3 +17,8 @@ build/
 .ruff_cache/
 coverage.xml
 htmlcov/
+
+# uv genera este lock al correr `uv build` o `uv sync`. El proyecto se
+# distribuye con hatchling y la CI instala con `uv pip install`, así que el
+# lock no lo usa nadie: se ignora en vez de trackear un archivo que miente.
+uv.lock

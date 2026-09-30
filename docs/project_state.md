@@ -22,6 +22,11 @@ unidad que su herramienta soporta y la excepción de Claude Code escrita en la
 spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
 (`audit run --hu` apuntaba a `docs/06_audits/None`).
 
+La deuda transversal de esa auditoría —el contador de HUs que nadie verificaba—
+se cierra con HU-15, en la rama `feature/hu-15-contador-verificable`: el check
+`contador_hus_al_dia` deriva el contador del disco y avisa cuando lo declarado
+queda por debajo (D35).
+
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
@@ -32,25 +37,21 @@ batería en cada PR a `develop` y en cada push a `develop` sobre 3.11, 3.12 y
 3.13 — verificado en verde sobre las tres (run `36743442993`), y
 `.github/workflows/publish.yml` publica en PyPI cuando se pushea un tag semver,
 previa batería y previa verificación de que el tag declara la versión de
-`pyproject.toml` y la de `__version__`. **La fila D-09 está a medias, y por
-eso el orden sigue igual**: la batería existe, la publicación la prueba el tag
-`v0.8.0` del release siguiente. Ese secreto ya está creado en el repo.
+`pyproject.toml` y la de `__version__`. **D-09 está cerrada**: el tag `v0.8.0`
+publicó por el job, no a mano (run `36750950132`). El token sigue siendo una
+credencial de larga vida y Trusted Publishing (OIDC) tiene fila propia en la
+cola, aparte del código.
 
-Pendientes, en orden: redactar la sección `[0.8.0]` del CHANGELOG con las fases
-8 y 9 y bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag
-`v0.7.0` en `087a482`, el 2026-09-30), cuyo release mueve `main` (D27); las dos
-deudas de código de la auditoría del 2026-09-29 — el contador de HUs del estado
-no lo verifica ningún check, y `audit run --reset-counter` scaffoldea un
-reporte nuevo con el alcance entero vacío antes de resetear; la regeneración de
+Pendientes, en orden: la deuda de código que queda de la auditoría del
+2026-09-29 — `audit run --reset-counter` scaffoldea un reporte nuevo con el
+alcance entero vacío antes de resetear (D-02); la regeneración de
 `examples/hello-logsayer/`, que hoy promete una salida real del CLI que no es
-(D10, y deliberadamente al final del ciclo); la implementación de la fase 7,
-cuyo diseño quedó escrito en la spec §4 y todavía no toca código (D29, D30,
-D31); fase 3 restante, que ya no es elegir un adaptador sino uno solo, decidido:
-Copilot (D26). Y una deuda que se acaba de sumar: el token de PyPI sigue siendo
-una credencial de larga vida en el repo, así que Trusted Publishing (OIDC)
-queda para después del release de 0.8.0, no mezclado con él. La cola vive en
-`inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
-desplazada: solo entra si duele.
+(D10, y deliberadamente al final del ciclo, después de D-02, D-07 y D-08, que
+tocan su superficie); la implementación de la fase 7, cuyo diseño quedó escrito
+en la spec §4 y todavía no toca código (D29, D30, D31); el adaptador Copilot de
+la fase 3 (D26); y Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`. La
+cola vive en `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter
+extendido) sigue desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -88,17 +89,20 @@ desplazada: solo entra si duele.
 - D32 — La CI corre sobre la matriz que declara el paquete: 3.11, 3.12 y 3.13 son las que dicen `requires-python` y los classifiers, así que la batería corre en todas ellas o la CI estaría declarando menos que el paquete. Y `ruff format --check` queda **fuera** de la puerta: hoy quiere reformatear 34 archivos, y un gate que arranca rojo es deuda nueva.
 - D33 — El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo: D11 ("la publicación es un hecho verificado, no una intención") vuelto mecanismo, y convierte el fallo de "un paquete publicado que miente" en "un corte con mensaje". El token sigue siendo una credencial de larga vida en el repo — Trusted Publishing (OIDC) es el cierre pendiente y tiene fila propia, aparte del release.
 - D34 — `examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora: promete ser salida real del CLI, así que cualquier cambio en la superficie lo vuelve falso, y las cuatro deudas que quedan (D-01, D-02, D-07, D-08) caen exactamente sobre sus líneas. Editarlo hoy a mano sería hacer trabajo que se tira.
+- D35 — El contador de HUs del estado se verifica contra el disco, pero el umbral no se mueve: el check `contador_hus_al_dia` (HU-15) deriva el contador —directorios `HU-*` sin veredicto en el reporte que selló— y avisa en `warn` solo cuando lo declarado subestima, que es el único sentido que retrasa la auditoría. Declarar de más es el caso benigno y no avisa (decidir 3); sin auditoría sellada no se mide, en vez de asumir que todo está pendiente, porque un aviso permanente no avisa (como D19 con `indice_al_dia`). Y `logsayer audit status` muestra el derivado pero el veredicto de umbral sigue siendo el del declarado: el derivado informa, no mueve el gate, porque cambiar cuándo se propone auditar en un comando publicado es una decisión de umbral, no una corrección de número. El check se validó contra este mismo repo y **avisó el primer día** (declaraba 1, derivadas 2), que es la prueba de que no es decorativo (D9).
 
 ## HUs cerradas desde la última auditoría
 
-1
+2
 
 Auditoría del 2026-09-29 aprobada y contador reseteado a 0 (venían 4 HUs desde
 el 2026-09-27: HU-10, HU-11, HU-12 y HU-13; el contador del estado decía 2 y el
-disco decía 4 — el número que dispara la auditoría es el único valor del marco
-que ningún check verifica). Umbral 3: a la tercera HU cerrada, la Decidora
+disco decía 4 — el número que dispara la auditoría era el único valor del marco
+que ningún check verificaba). Umbral 3: a la tercera HU cerrada, la Decidora
 vuelve a correr y ahora el alcance lo verifica `auditoria_completa`.
 
-Desde el reset cierra HU-14 (deuda de HU-07). `auditoria_completa` va a
-avisar hasta la próxima corrida —HU-14 no estaba en el alcance del reporte
-sellado—: es el comportamiento diseñado, no un hueco.
+Desde el reset cierran HU-14 (deuda de HU-07) y HU-15 (D-01, el contador
+verificable). El número real es 2 y por primera vez un check lo confirma
+(D35). `auditoria_completa` sigue avisando hasta la próxima corrida —HU-14 y
+HU-15 no estaban en el alcance del reporte sellado—: es el comportamiento
+diseñado, no un hueco.

@@ -121,6 +121,31 @@ def test_audit_status_reports_not_due(cwd_project: Path) -> None:
     assert "2" in result.output
 
 
+def test_audit_status_shows_derived_without_moving_the_threshold(
+    cwd_project: Path,
+) -> None:
+    """El derivado se muestra como dato; el umbral sigue decidiendo con lo
+    declarado (D35). El desvase se avisa, no corrige el veredicto."""
+    for hu in ("HU-01", "HU-02"):
+        directory = cwd_project / "docs" / "04_user_stories" / hu
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "README.md").write_text(f"# {hu}\n", encoding="utf-8")
+    audits = cwd_project / "docs" / "06_audits"
+    audits.mkdir(parents=True, exist_ok=True)
+    (audits / "audit_2026-09-27.md").write_text(
+        "# Auditoría\n\n| HU | Veredicto | Evidencia |\n| --- | --- | --- |\n"
+        "| HU-01 | cumple | ev |\n",
+        encoding="utf-8",
+    )
+    set_closed_hus(cwd_project, 0)
+    result = runner.invoke(app, ["audit", "status"])
+    assert result.exit_code == 0, result.output
+    assert "Derivadas del disco: 1 HU(s) sin veredicto" in result.output
+    assert "HU-02" in result.output
+    assert "queda por debajo del derivado" in result.output
+    assert "no corresponde auditar" in result.output
+
+
 def test_audit_via_role_group(cwd_project: Path) -> None:
     result = runner.invoke(app, ["truthsayer", "audit", "status"])
     assert result.exit_code == 0, result.output

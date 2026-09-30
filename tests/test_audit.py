@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 
 from logsayer.core import audit
-from logsayer.core.suk import check_audit_coverage
+from logsayer.core.project import set_closed_hus
+from logsayer.core.suk import check_audit_coverage, check_hu_counter, run_suk
 
 HU = "docs/04_user_stories/HU-01/README.md"
 AU = "docs/06_audits"
@@ -308,6 +309,96 @@ class TestCheckCobertura:
         _hu(repo, "HU-02")
         audit.run_audit(repo)
         assert check_audit_coverage(repo).status == "warn"
+
+
+class TestContadorAlDia:
+    """El contador de HUs del estado, medido contra el disco (D35)."""
+
+    def test_sin_auditoria_sellada_no_se_mide(self, repo: Path) -> None:
+        _hu(repo, "HU-01")
+        result = check_hu_counter(repo)
+        assert result.status == "ok"
+        assert "no se mide" in result.detail
+
+    def test_reporte_en_prosa_no_sella(self, repo: Path) -> None:
+        """Los reportes anteriores a la fase 9 no dicen cuáles HUs cubrieron;
+        medirlos daría un aviso permanente en todo proyecto con HUs."""
+        _hu(repo, "HU-01")
+        old = repo / AU / "audit_2026-09-27.md"
+        old.parent.mkdir(parents=True, exist_ok=True)
+        old.write_text("# Auditoría\n\n### HU-01 — cumple\n", encoding="utf-8")
+        assert check_hu_counter(repo).status == "ok"
+
+    def test_al_dia_es_ok(self, repo: Path) -> None:
+        _hu(repo, "HU-01")
+        _hu(repo, "HU-02")
+        _seal(repo, {"HU-01": "cumple"})
+        set_closed_hus(repo, 1)
+        result = check_hu_counter(repo)
+        assert result.status == "ok"
+        assert "declaradas 1, derivadas 1" in result.detail
+
+    def test_declarado_por_debajo_es_warn_nunca_fail(self, repo: Path) -> None:
+        """El caso de la auditoría del 2026-09-29: el estado decía 2 y el
+        disco tenía 4, así que el umbral se cruzó sin que nadie lo notara."""
+        _hu(repo, "HU-01")
+        _hu(repo, "HU-02")
+        _seal(repo, {"HU-01": "cumple"})
+        set_closed_hus(repo, 0)
+        result = check_hu_counter(repo)
+        assert result.status == "warn"
+        assert "HU-02" in result.detail
+        assert "audit_2026-09-27.md" in result.detail
+
+    def test_declarado_por_encima_no_avisa(self, repo: Path) -> None:
+        """Unidireccional: avisar del caso benigno castiga más de lo que
+        avisa, y el fallo que retrasa la auditoría es el que subestima."""
+        _hu(repo, "HU-01")
+        _seal(repo, {"HU-01": "cumple"})
+        set_closed_hus(repo, 3)
+        assert check_hu_counter(repo).status == "ok"
+
+    def test_sin_cambios_cuenta_como_cubierta(self, repo: Path) -> None:
+        _hu(repo, "HU-01")
+        _hu(repo, "HU-02")
+        _seal(repo, {"HU-01": "cumple", "HU-02": "sin cambios"})
+        set_closed_hus(repo, 0)
+        assert check_hu_counter(repo).status == "ok"
+
+    def test_un_andamiaje_vacio_no_rompe_el_sello(self, repo: Path) -> None:
+        """`audit run` scaffoldea un reporte con todas las filas vacías: si ese
+        andamiaje contara como sello, el derivado saltaría a todas las HUs y
+        el check acusaría un desfase que no existe."""
+        _hu(repo, "HU-01")
+        _seal(repo, {"HU-01": "cumple"})
+        scaffolded = repo / AU / "audit_2099-01-01.md"
+        scaffolded.parent.mkdir(parents=True, exist_ok=True)
+        scaffolded.write_text(
+            "| HU | Veredicto | Evidencia |\n| --- | --- | --- |\n"
+            "| HU-01 | — | — |\n",
+            encoding="utf-8",
+        )
+        set_closed_hus(repo, 0)
+        derived = audit.derived_closed_hus(repo)
+        assert derived is not None
+        assert derived.source.name == "audit_2026-09-27.md"
+        assert check_hu_counter(repo).status == "ok"
+
+    def test_el_derivado_no_mira_el_estado(self, repo: Path) -> None:
+        _hu(repo, "HU-01")
+        _hu(repo, "HU-02")
+        _seal(repo, {"HU-01": "cumple"})
+        set_closed_hus(repo, 7)
+        derived = audit.derived_closed_hus(repo)
+        assert derived is not None
+        assert derived.hus == ("HU-02",)
+        assert derived.count == 1
+        assert derived.source.name == "audit_2026-09-27.md"
+
+    def test_entra_en_el_suk(self, repo: Path) -> None:
+        _hu(repo, "HU-01")
+        names = [result.name for result in run_suk(repo)]
+        assert "contador_hus_al_dia" in names
 
 
 class TestPasadaAislada:

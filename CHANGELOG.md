@@ -4,6 +4,12 @@ Todos los cambios notables de logsayer quedan documentados acá, por versión, e
 
 ## [Unreleased]
 
+### Added
+- **Check `contador_hus_al_dia`** (HU-15, D-01): el contador de HUs cerradas del snapshot deja de ser una afirmación y se mide contra el disco — el derivado cuenta los directorios `HU-*` sin veredicto en el reporte que selló. Avisa en `warn` cuando lo declarado **subestima** lo que hay en disco, que es el único sentido que retrasa la auditoría (el caso benigno, declarar de más, no avisa). Sin auditoría sellada no se mide, en vez de asumir que todas las HUs están pendientes. Es la deuda transversal de la auditoría del 2026-09-29: el estado declaraba 2 HUs con 4 en disco y ningún check lo veía.
+
+### Changed
+- **`logsayer audit status` muestra el derivado** del disco junto al contador declarado, y avisa cuando el declarado queda por debajo. El veredicto de umbral sigue siendo el del contador declarado — el derivado informa, no mueve el gate.
+
 ## [0.8.0] — 2026-09-30
 
 Fases 8 y 9 del roadmap: **memoria seleccionable** y **auditoría por pasada**. Las dos atacan el mismo defecto desde lados opuestos — el agente no sabía qué documento abrir primero, y la Decidora no sabía a qué HUs debía mirar. Ninguna de las dos se resolvió con prosa: la fase 8 produce un artefacto (`docs/00_memory_index.md`) y la fase 9 produce una tabla de alcance que el CLI escribe y relee, así que un hueco en cualquiera de las dos se ve en un `git diff`. La fase 8 entró a `develop` el 2026-09-28 (HU-10, HU-11) y la fase 9 el 2026-09-29 (HU-12, HU-13).

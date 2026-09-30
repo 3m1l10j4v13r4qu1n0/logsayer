@@ -2,6 +2,8 @@
 
 > **Spec-kit tells you what to build. logsayer tells you where you stand, how you got there, and whether what you built is still what you said you would build.**
 
+[![CI](https://github.com/3m1l10j4v13r4qu1n0/logsayer/actions/workflows/ci.yml/badge.svg)](https://github.com/3m1l10j4v13r4qu1n0/logsayer/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/logsayer.svg)](https://pypi.org/project/logsayer/)
+
 A Python CLI that scaffolds and coordinates a 5-layer documentary system for AI-agent projects: Specification, State, Logbook, Verification (mechanical + semantic), and Process.
 
 Everything the agent needs to know about a project is written down by the same system that uses it — each layer answers one question, each document lives in exactly one layer, and every judgment lives in the CLI, not in the generated files.

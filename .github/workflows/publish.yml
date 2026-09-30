@@ -1,0 +1,72 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  bateria:
+    name: Bateria antes de publicar
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v5
+      - name: Instalar el proyecto con sus extras de dev
+        run: uv pip install --system -e ".[dev]"
+      - name: pytest
+        run: python -m pytest -q
+      - name: ruff
+        run: ruff check src tests
+      - name: mypy
+        run: mypy src
+
+  publicar:
+    name: Publicar en PyPI
+    needs: bateria
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v5
+      - name: El tag tiene que declarar la version que declara el proyecto
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import tomllib
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          declared = tomllib.loads(
+              pathlib.Path("pyproject.toml").read_text()
+          )["project"]["version"]
+          init = pathlib.Path("src/logsayer/__init__.py").read_text()
+
+          if tag != f"v{declared}":
+              raise SystemExit(
+                  f"el tag {tag} no coincide con la version {declared} de pyproject.toml"
+              )
+          if f'__version__ = "{declared}"' not in init:
+              raise SystemExit(
+                  f"__version__ de src/logsayer/__init__.py no declara {declared}"
+              )
+          print(f"tag {tag} alineado con pyproject.toml y __init__.py")
+          PY
+      - name: Construir
+        run: uv build
+      - name: Publicar
+        run: uv publish
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}

@@ -1,5 +1,5 @@
 ---
-fase: fase9
+fase: fase7
 ---
 # Estado del proyecto — logsayer
 
@@ -31,14 +31,15 @@ Pendientes, en orden: la deuda de publicación por CI, que sale del release de
 0.7.0 y es lo único que hoy ata el tag a una shell con token (D28, fila D-09 de
 la cola); redactar la sección `[0.8.0]` del CHANGELOG con las fases 8 y 9 y
 bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag `v0.7.0` en
-`087a482`, el 2026-09-30), cuyo release mueve `main` (D27); fase 3 restante, que
-ya no es elegir un adaptador sino uno solo, decidido: Copilot (D26); fase 7
-(comunidad: presets, más agentes), que sigue sin diseño y es la única decisión
-que falta. Dos deudas de código de la auditoría del 2026-09-29 siguen abiertas:
-el contador de HUs del estado no lo verifica ningún check, y `audit run
---reset-counter` scaffoldea un reporte nuevo con el alcance entero vacío antes
-de resetear. La cola vive en `inbox/feedback_deudas_auditoria.md`. La fase 10
-(frontmatter extendido) sigue desplazada: solo entra si duele.
+`087a482`, el 2026-09-30), cuyo release mueve `main` (D27); la implementación de
+la fase 7, cuyo diseño quedó escrito en la spec §4 y todavía no toca código
+(D29, D30, D31); fase 3 restante, que ya no es elegir un adaptador sino uno
+solo, decidido: Copilot (D26). Dos deudas de código de la auditoría del
+2026-09-29 siguen abiertas: el contador de HUs del estado no lo verifica ningún
+check, y `audit run --reset-counter` scaffoldea un reporte nuevo con el alcance
+entero vacío antes de resetear. La cola vive en
+`inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
+desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -70,6 +71,9 @@ de resetear. La cola vive en `inbox/feedback_deudas_auditoria.md`. La fase 10
 - D26 — La fase 3 se cierra con un solo adaptador, Copilot: es el de mayor uso y su convención (`AGENTS.md` más instrucciones por path con `applyTo`) es la más expresiva. No se implementan los cuatro que el registro enumera a la vez: `hermes` no tiene ni un referente verificable, y cuatro adaptadores a medio hacer son cuatro superficies de permisos que la herramienta puede ignorar en silencio (D24).
 - D27 — El release de 0.8.0 mueve `main`: PR `develop` → `main` y el tag semver sobre ese merge. `main` quedó en 0.6.0 solo porque era ancestro estricto de `develop` y no había forma de que contuviera únicamente la fase 6; con las fases 8 y 9 ya integradas, el tag y el contenido de `main` vuelven a decir lo mismo y el desfase termina acá.
 - D28 — La publicación es manual hasta que exista CI: el repo no tiene `.github/workflows/`, así que `v0.7.0` salió de una shell con `UV_PUBLISH_TOKEN` y no hay ruta automatizada. La deuda entra como fila propia de la cola y no solo en la bitácora, porque la bitácora no es la cola de trabajo entre sesiones y `bandeja_entrada` mide antigüedad, no existencia: sin fila, ningún check la va a avisar.
+- D29 — El idioma del contenido no es eje del preset: detrás de una clave `lang` hay i18n de los 17 templates —con los 8 de adaptadores, que además difieren entre opencode y Claude Code— y no hay ninguna bandera de idioma en el CLI. Queda fuera de la v1 y el idioma es decisión de proyecto, que es lo que el propio `AGENTS.md` generado ya dice: superficie pública en inglés, contenido generado en el idioma del proyecto. Si entra alguna vez, entra como fase propia.
+- D30 — `init` declara y `agent add` ejecuta: el preset escribe `[adapters] enabled` y el único comando que genera archivos de adaptador sigue siendo `agent add`. La razón es dura y no es de gusto: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir (D4) y podría pisar subagentes editados por el usuario. La distancia entre declarar y ejecutar la reconcilia el check `adaptadores_declarados`, que avisa y no corrige.
+- D31 — Los umbrales se quedan en `[logsayer]` y no se mueven: cambiar la tabla a `[thresholds]` haría que todo proyecto ya scaffoldeado dejara de encontrar sus umbrales y volviera a los defaults **en silencio**, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración". `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, así que el cambio no rompe nada y no obliga a migrar archivos versionados de los usuarios.
 
 ## HUs cerradas desde la última auditoría
 

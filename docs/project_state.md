@@ -27,17 +27,14 @@ spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: publicar 0.7.0 con su tag `v0.7.0` —el tag se corta en
-`087a482`, el merge de la auditoría del 2026-09-28, que es el último commit
-antes de que el diseño de la fase 8 entre a `develop` y ya declara 0.7.0 sin
-memoria ni auditoría por pasada; en PyPI sigue 0.6.0—; después, redactar la
-sección `[0.8.0]` del CHANGELOG con las fases 8 y 9 (la `[0.7.0]` ya está
-redactada y con la fecha correcta: la fase 6 se integró el 2026-09-25); fase 3
-restante (adaptadores copilot/cursor/gemini/hermes por demanda); fase 7
-(comunidad: presets, más agentes). Dos deudas de código de la auditoría del
-2026-09-29 siguen abiertas: el contador de HUs del estado no lo verifica ningún
-check, y `audit run --reset-counter` scaffoldea un reporte nuevo con el alcance
-entero vacío antes de resetear. La cola vive en
+Pendientes, en orden: redactar la sección `[0.8.0]` del CHANGELOG con las fases 8
+y 9 y bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag `v0.7.0`
+en `087a482`, el 2026-09-30); fase 3 restante (adaptadores
+copilot/cursor/gemini/hermes por demanda); fase 7 (comunidad: presets, más
+agentes). Dos deudas de código de la auditoría del 2026-09-29 siguen abiertas:
+el contador de HUs del estado no lo verifica ningún check, y
+`audit run --reset-counter` scaffoldea un reporte nuevo con el alcance entero
+vacío antes de resetear. La cola vive en
 `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
 desplazada: solo entra si duele.
 
@@ -53,7 +50,7 @@ desplazada: solo entra si duele.
 - D8 — El CLI mueve y nombra; el contenido lo deriva el subagente Mentat.
 - D9 — Los checks de Capa 1 (`header_capa1`, `estado_al_dia`) se validaron contra este mismo repo: fallaron el primer día.
 - D10 — El CLI propone la capa, no la decide: sin default a `02_technical/`; elige Mentat.
-- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25. El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
+- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25 y **0.7.0 desde el 2026-09-30** (comprobado en la JSON API y reinstalando el paquete desde PyPI en un venv limpio: expone `inbox` y `doc` y no expone `memory`). El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
 - D12 — El grafo de memoria es capa transversal de navegación, no una sexta capa: indexa las cinco, no compite con ellas.
 - D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
 - D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.

@@ -24,7 +24,7 @@ from logsayer.core.layers import (
     STORIES,
     TECHNICAL,
 )
-from logsayer.core.project import state_file
+from logsayer.core.project import read_closed_hus, state_file
 
 L1_GLOBAL = Path("docs") / GLOBAL
 L1_TECHNICAL = Path("docs") / TECHNICAL
@@ -259,6 +259,42 @@ def check_audit_coverage(root: Path) -> CheckResult:
     return ok("auditoria_completa")
 
 
+def check_hu_counter(root: Path) -> CheckResult:
+    """El contador de HUs del estado no queda por debajo del disco (D35).
+
+    Es el único número del marco que decide si hacía falta auditar, y era el
+    único que nadie verificaba: la auditoría del 2026-09-29 encontró el estado
+    declarando 2 HUs cerradas con 4 en disco, así que el umbral se cruzó sin
+    que nadie lo notara. `auditoria_completa` mide la cobertura de filas del
+    reporte, que es otra cosa; este check mide el desfase del contador.
+
+    La dirección es una sola (D7). Avisar cuando lo declarado supera a lo
+    derivado sería castigar el caso benigno —una HU borrada, un contador
+    redondeado hacia arriba— por un fallo que no existe; el fallo real es el
+    que subestima, porque el que retrasa la auditoría.
+
+    Es `warn` y no `fail`: corregir el contador es escribir prosa en el
+    snapshot, y bloquear el check obligaría a hacerlo antes de poder trabajar.
+    """
+    derived = audit.derived_closed_hus(root)
+    if derived is None:
+        return ok("contador_hus_al_dia", "sin auditoría sellada; no se mide")
+    declared = read_closed_hus(root)
+    if declared < derived.count:
+        listing = ", ".join(derived.hus)
+        return warn(
+            "contador_hus_al_dia",
+            f"el estado declara {declared} HU(s) cerrada(s) y el disco tiene "
+            f"{derived.count} sin veredicto en {derived.source.name}: {listing}"
+            "\n   → el contador que dispara la auditoría quedó desfasado: "
+            "actualizalo en docs/project_state.md o corré la auditoría",
+        )
+    return ok(
+        "contador_hus_al_dia",
+        f"declaradas {declared}, derivadas {derived.count}",
+    )
+
+
 def check_state_freshness(root: Path) -> CheckResult:
     """El snapshot no puede quedar viejo sin que nadie lo note (F7).
 
@@ -333,4 +369,5 @@ def run_suk(root: Path) -> list[CheckResult]:
         check_inbox(root, config),
         check_state_freshness(root),
         check_audit_coverage(root),
+        check_hu_counter(root),
     ]

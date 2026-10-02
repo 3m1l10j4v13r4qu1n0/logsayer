@@ -338,7 +338,10 @@ Es **una sola capa** con dos roles complementarios: el mecánico diagnostica sí
 
 **Rol en el framework:** chequeo estructural automatizado — tests, linters, validación de que la estructura de carpetas y capas no se mezcló. Detecta si el "paciente" (el proyecto) está sano según parámetros objetivos y medibles. Es también el canal por el que el proyecto se entera de que hay documentos sin ubicar en `inbox/`: ese reporte es un `warn`, no un `fail`, porque una bandeja con pendientes es un proyecto sano con un pendiente, no un paciente enfermo.
 
-**Comando:** `logsayer suk doctor` · alias `logsayer check`
+**Comandos:** `logsayer suk doctor` · alias `logsayer check`
+
+**Chequeos determinísticos (D7):**
+- `marcadores_raiz`, `estructura_capas`, `estado_capa2`, `bitacora_indice`, `hus_ubicacion`, `capas_mezcladas`, `header_capa1`, `bandeja_entrada`, `estado_al_dia`, `auditoria_completa` y `contador_hus_al_dia`. Todos `ok|warn`, y solo `fail` corta el flujo. `contador_hus_al_dia` compara el contador declarado en el snapshot contra el derivado del disco sobre el reporte sellado, avisando en `warn` **solo** cuando lo declarado subestima (nunca falla).
 
 #### 👁️ Decidora de Verdad (Bene Gesserit) — Verificación (semántica)
 

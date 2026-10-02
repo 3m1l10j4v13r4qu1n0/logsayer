@@ -22,6 +22,7 @@ project_state.md                     · nivel 0 · — · — · project, state
 04_user_stories/HU-12/README.md      · nivel 2 · — · — · hu-12
 04_user_stories/HU-13/README.md      · nivel 2 · — · — · hu-13
 04_user_stories/HU-14/README.md      · nivel 2 · — · — · hu-14
+04_user_stories/HU-15/README.md      · nivel 2 · — · — · hu-15
 03_process/definition-of-ready.md    · nivel 3 · — · — · definition, of, ready
 03_process/merge-checklist.md        · nivel 3 · — · — · merge, checklist
 05_agile_methodology/metodologia.md  · nivel 3 · — · — · metodologia
@@ -39,5 +40,6 @@ logbooks/logbook_fase3_01.md         · nivel 3 · — · — · logbook, fase3
 logbooks/logbook_fase4_01.md         · nivel 3 · — · — · logbook, fase4
 logbooks/logbook_fase5_01.md         · nivel 3 · — · — · logbook, fase5
 logbooks/logbook_fase6_01.md         · nivel 3 · — · — · logbook, fase6
+logbooks/logbook_fase7_01.md         · nivel 3 · — · — · logbook, fase7
 logbooks/logbook_fase8_01.md         · nivel 3 · — · — · logbook, fase8
 logbooks/logbook_fase9_01.md         · nivel 3 · — · — · logbook, fase9

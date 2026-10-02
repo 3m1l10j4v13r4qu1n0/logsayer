@@ -472,6 +472,7 @@ def audit_status() -> None:
         config = LogsayerConfig.load(root / "logsayer.toml")
         closed = project.read_closed_hus(root)
         last = audit.last_audit(root)
+        derived = audit.derived_closed_hus(root)
         threshold = config.audit_threshold_hus
     except ProjectRootError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -481,6 +482,21 @@ def audit_status() -> None:
         typer.echo("Última auditoría: ninguna reportada.")
     else:
         typer.echo(f"Última auditoría: {last.name} ({last.relative_to(root)})")
+    if derived is None:
+        typer.echo("Derivadas del disco: no se mide (sin auditoría sellada).")
+    else:
+        where = derived.source.relative_to(root)
+        listing = ", ".join(derived.hus) if derived.hus else "ninguna"
+        typer.echo(
+            f"Derivadas del disco: {derived.count} HU(s) sin veredicto en "
+            f"{where} ({listing})"
+        )
+        if closed < derived.count:
+            typer.echo(
+                "! El contador declarado queda por debajo del derivado: es el "
+                "número que decide si toca auditar, así que el desvase retrasa "
+                "la auditoría. Corregilo en docs/project_state.md."
+            )
     if closed >= threshold:
         typer.echo("Estado: corresponde auditar. Ejecuta: logsayer audit run")
     else:

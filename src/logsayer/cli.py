@@ -432,7 +432,8 @@ def audit_run(
         bool,
         typer.Option(
             "--reset-counter",
-            help="Reinicia el contador de HUs en project_state.md tras la corrida.",
+            help="[DEPRECATED] No resetea desde audit run. Usá 'logsayer audit reset'.",
+            callback=lambda v: v,
         ),
     ] = False,
     only: Annotated[
@@ -447,9 +448,13 @@ def audit_run(
     lo produce la Decidora."""
     try:
         root = require_logsayer_root(Path.cwd())
-        artifact = audit.run_audit(root, only=only)
         if reset_counter:
-            project.set_closed_hus(root, 0)
+            typer.echo(
+                "--reset-counter ya no resetea: usá logsayer audit reset",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        artifact = audit.run_audit(root, only=only)
     except (ProjectRootError, audit.AuditError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     where = artifact.relative_to(root)
@@ -458,10 +463,7 @@ def audit_run(
         typer.echo("El alcance no cambia: es el input de repetir una fila.")
         return
     typer.echo(f"Estructura y prompt generados en {where}")
-    if reset_counter:
-        typer.echo("Contador de HUs reiniciado a 0 en project_state.md.")
-    else:
-        typer.echo("Contador intacto. Al aprobar, corre de nuevo con --reset-counter.")
+    typer.echo("Contador intacto. Al aprobar, corre logsayer audit reset.")
 
 
 @audit_typer.command("status")
@@ -474,14 +476,15 @@ def audit_status() -> None:
         last = audit.last_audit(root)
         derived = audit.derived_closed_hus(root)
         threshold = config.audit_threshold_hus
-    except ProjectRootError as exc:
+    except (ProjectRootError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    current = f"HUs cerradas desde la última auditoría: {closed}"
-    typer.echo(f"{current} (umbral: {threshold})")
+    typer.echo(
+        f"HUs cerradas desde la última auditoría: {closed} (umbral: {threshold})"
+    )
     if last is None:
-        typer.echo("Última auditoría: ninguna reportada.")
+        typer.echo("Última auditoría: ninguna")
     else:
-        typer.echo(f"Última auditoría: {last.name} ({last.relative_to(root)})")
+        typer.echo(f"Última auditoría: {last.relative_to(root)}")
     if derived is None:
         typer.echo("Derivadas del disco: no se mide (sin auditoría sellada).")
     else:
@@ -501,7 +504,25 @@ def audit_status() -> None:
         typer.echo("Estado: corresponde auditar. Ejecuta: logsayer audit run")
     else:
         missing = threshold - closed
-        typer.echo(f"Estado: no corresponde auditar (faltan {missing} HUs).")
+        typer.echo(f"Estado: en pausa. Restan {missing} HUs para proponer auditoría.")
+
+
+@audit_typer.command("reset")
+def audit_reset() -> None:
+    """Reinicia el contador de HUs (no corrige reportes ni genera artefactos)."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        pending = audit.pending_verdicts(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if pending:
+        listing = ", ".join(pending)
+        raise typer.BadParameter(
+            f"Hay HUs con veredicto pendiente: {listing}. "
+            "Completalas antes de resetear."
+        )
+    project.set_closed_hus(root, 0)
+    typer.echo("Contador de HUs reiniciado a 0 en docs/project_state.md.")
 
 
 _register_with_alias("truthsayer", audit_typer, "audit")

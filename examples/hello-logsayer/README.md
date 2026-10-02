@@ -296,7 +296,7 @@ go?":
 logsayer doc route
 ```
 
-```
+
 igdónde va mi documento?
 
 | Entrada                                                          | Va a                                                       | ¿Se versiona?                            | Crear con                           |
@@ -311,7 +311,7 @@ igdónde va mi documento?
 Nunca: un .md suelto en docs/. Es lo que `logsayer check` rechaza como capas_mezcladas.
 
 El CLI no redacta el contenido: elige la capa y creá el documento con el comando de la fila.
-```
+
 
 ## 6. Semantic verification (layer 4 — Truthsayer)
 

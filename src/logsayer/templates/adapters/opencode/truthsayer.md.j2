@@ -33,7 +33,7 @@ The Truthsayer ({{ project_name }}) es la Decidora de Verdad: detecta si lo cons
 - `logsayer audit run`: genera la tabla de alcance y el prompt de auditoría; el resultado reflexivo lo produce el agente orquestador con el reporte como insumo.
 - `logsayer audit run --hu HU-XX`: reemite el brief de **una** pasada, para repetir la que falló. No cambia el alcance ni escribe reporte: el alcance vive en la tabla, y un reporte con una sola fila se volvería "el previo" y dejaría al resto del alcance sin cubrir.
 - `logsayer audit status`: muestra el contador vs el umbral y el último reporte.
-- Al aprobar la auditoría, re-correr `logsayer audit run --reset-counter` para reiniciar el contador.
+- Al aprobar la auditoría, re-correr `logsayer audit reset` para reiniciar el contador.
 
 ## Una pasada por HU, y una síntesis al final
 - El prompt trae una sección por HU con su input acotado: el README de la HU, la base fija y las rutas que cita. Auditala una por una; una pasada que falla se repite con `--hu` sin arrastrar a las demás.

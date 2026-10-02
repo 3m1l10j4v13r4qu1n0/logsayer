@@ -100,10 +100,11 @@ def test_audit_run_keeps_counter_without_flag(cwd_project: Path) -> None:
 def test_audit_run_reset_counter_flag(cwd_project: Path) -> None:
     set_closed_hus(cwd_project, 3)
     result = runner.invoke(app, ["audit", "run", "--reset-counter"])
-    assert result.exit_code == 0, result.output
-    assert "reiniciado" in result.output
+    assert result.exit_code == 1, result.output
+    assert "usá logsayer audit reset" in result.output
+    assert "reiniciado" not in result.output
     state = (cwd_project / "docs" / "project_state.md").read_text(encoding="utf-8")
-    assert "0" in state.split("desde la última auditoría")[1][:5]
+    assert "3" in state.split("desde la última auditoría")[1][:5]
 
 
 def test_audit_status_reports_due(cwd_project: Path) -> None:
@@ -117,7 +118,7 @@ def test_audit_status_reports_not_due(cwd_project: Path) -> None:
     set_closed_hus(cwd_project, 1)
     result = runner.invoke(app, ["audit", "status"])
     assert result.exit_code == 0, result.output
-    assert "no corresponde auditar" in result.output
+    assert "Restan" in result.output
     assert "2" in result.output
 
 
@@ -143,12 +144,61 @@ def test_audit_status_shows_derived_without_moving_the_threshold(
     assert "Derivadas del disco: 1 HU(s) sin veredicto" in result.output
     assert "HU-02" in result.output
     assert "queda por debajo del derivado" in result.output
-    assert "no corresponde auditar" in result.output
+    assert "Restan" in result.output
 
 
 def test_audit_via_role_group(cwd_project: Path) -> None:
     result = runner.invoke(app, ["truthsayer", "audit", "status"])
     assert result.exit_code == 0, result.output
+
+
+def test_audit_reset_rejects_with_pending_verdicts(cwd_project: Path) -> None:
+    audits = cwd_project / "docs" / "06_audits"
+    audits.mkdir(parents=True, exist_ok=True)
+    hus_dir = cwd_project / "docs" / "04_user_stories"
+    (hus_dir / "HU-14").mkdir(parents=True, exist_ok=True)
+    (hus_dir / "HU-14" / "README.md").write_text("# HU-14\n", encoding="utf-8")
+    (hus_dir / "HU-15").mkdir(parents=True, exist_ok=True)
+    (hus_dir / "HU-15" / "README.md").write_text("# HU-15\n", encoding="utf-8")
+    table = (
+        "# Auditoría\n\n## Alcance de la auditoría por pasada\n\n"
+        "| HU | Veredicto | Evidencia | Observaciones |\n"
+        "|---|---|---|---|\n"
+        "| HU-14 |  |  |  |\n"
+        "| HU-15 |  |  |  |\n"
+    )
+    (audits / "audit_2026-09-29.md").write_text(table, encoding="utf-8")
+    set_closed_hus(cwd_project, 2)
+    before = list(audits.glob("*"))
+    result = runner.invoke(app, ["audit", "reset"])
+    assert result.exit_code != 0, result.output
+    out = result.output
+    assert "HU-14" in out or "HU-15" in out or "pendiente" in out
+    assert list(audits.glob("*")) == before
+
+
+def test_audit_reset_clears_counter_when_complete(
+    cwd_project: Path,
+    tmp_path: Path,
+) -> None:
+    audits = cwd_project / "docs" / "06_audits"
+    audits.mkdir(parents=True, exist_ok=True)
+    content = (
+        "# Auditoría\n\n## Alcance de la auditoría por pasada\n\n"
+        "| HU | Veredicto | Evidencia | Observaciones |\n|---|---|---|---|\n"
+        "| HU-01 | cumple | ev | o |\n"
+        "| HU-02 | cumple | ev | o |\n"
+    )
+    (audits / "audit_2026-09-27.md").write_text(content, encoding="utf-8")
+    set_closed_hus(cwd_project, 3)
+    before = set(audits.glob("*"))
+    result = runner.invoke(app, ["audit", "reset"])
+    assert result.exit_code == 0, result.output
+    assert "reiniciado" in result.output
+    after = set(audits.glob("*"))
+    assert after == before
+    state = (cwd_project / "docs" / "project_state.md").read_text(encoding="utf-8")
+    assert "0" in state.split("desde la última auditoría")[1][:5]
 
 
 def test_help_lists_flat_aliases() -> None:

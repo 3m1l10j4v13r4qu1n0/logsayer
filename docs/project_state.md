@@ -93,7 +93,7 @@ extendido) sigue desplazada: solo entra si duele.
 
 ## HUs cerradas desde la última auditoría
 
-2
+3
 
 Auditoría del 2026-09-29 aprobada y contador reseteado a 0 (venían 4 HUs desde
 el 2026-09-27: HU-10, HU-11, HU-12 y HU-13; el contador del estado decía 2 y el
@@ -101,8 +101,8 @@ disco decía 4 — el número que dispara la auditoría era el único valor del 
 que ningún check verificaba). Umbral 3: a la tercera HU cerrada, la Decidora
 vuelve a correr y ahora el alcance lo verifica `auditoria_completa`.
 
-Desde el reset cierran HU-14 (deuda de HU-07) y HU-15 (D-01, el contador
-verificable). El número real es 2 y por primera vez un check lo confirma
-(D35). `auditoria_completa` sigue avisando hasta la próxima corrida —HU-14 y
-HU-15 no estaban en el alcance del reporte sellado—: es el comportamiento
-diseñado, no un hueco.
+Desde el reset cierran HU-14 (deuda de HU-07), HU-15 (D-01, el contador
+verificable) y HU-16 (D-02, `audit reset` + shim deprecado para `--reset-counter`).
+El número real es 3 y un check lo confirma (D35). `auditoria_completa` sigue
+avisando hasta la próxima corrida —HU-14, HU-15 y HU-16 no estaban en el alcance
+del reporte sellado—: es el comportamiento diseñado, no un hueco.

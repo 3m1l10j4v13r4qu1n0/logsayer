@@ -24,6 +24,7 @@ project_state.md                     · nivel 0 · — · — · project, state
 04_user_stories/HU-14/README.md      · nivel 2 · — · — · hu-14
 04_user_stories/HU-15/README.md      · nivel 2 · — · — · hu-15
 04_user_stories/HU-16/README.md      · nivel 2 · — · — · hu-16
+04_user_stories/HU-17/README.md      · nivel 2 · — · — · hu-17
 03_process/definition-of-ready.md    · nivel 3 · — · — · definition, of, ready
 03_process/merge-checklist.md        · nivel 3 · — · — · merge, checklist
 05_agile_methodology/metodologia.md  · nivel 3 · — · — · metodologia

@@ -1,0 +1,12 @@
+---
+applyTo: "docs/01_global/**,docs/02_technical/**,docs/04_user_stories/**"
+excludeAgent: "code-review"
+---
+Instrucciones de Capa 1 de {{ project_name }} (rol Mentat). Aplican a los archivos de especificación: el código del proyecto no es Capa 1 y no se reescribe desde acá.
+
+- Los umbrales (auditoría a las {{ audit_threshold_hus }} HUs, partición de bitácora a las {{ bitacora_max_lines }} líneas) se **leen** de `logsayer.toml` con `logsayer audit status`; no se copian a los documentos, que un humano puede editar y dejarían de coincidir con la configuración real.
+- El campo `fase:` del frontmatter de un documento de Capa 1 es un identificador corto, no una frase.
+- Una HU nueva se crea con `logsayer spec new <HU>`: el template trae "qué construir" y "cómo se valida", y el CLI no redacta el contenido.
+- Un documento externo (entrega, acta, contrato) entra por `inbox/` con `logsayer inbox add`, y la capa la decide el rol, no el archivo.
+- Si un cambio de arquitectura aparece mientras editás Capa 1, no lo escribas acá como registro de decisión: va a `docs/02_technical/decisions.md` y a la bitácora.
+- Este archivo no declara permisos: `applyTo` decide dónde se inyecta la instrucción, no qué puede escribir el rol.

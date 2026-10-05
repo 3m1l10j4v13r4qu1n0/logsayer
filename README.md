@@ -19,7 +19,7 @@ The spec-driven pattern (as popularized by GitHub Spec Kit) governs the *first* 
 - **State continuity** between sessions — an anchor snapshot the agent reads (and only that) at session start.
 - **A partitioned, append-only logbook** for the *"why"* of past decisions.
 - **A mechanical + semantic verification loop** that checks whether the code still matches the spec — both structurally and in meaning.
-- **Multi-agent coordination** through the standard `AGENTS.md` convention, with thin native adapters per tool (opencode and Claude Code today).
+- **Multi-agent coordination** through the standard `AGENTS.md` convention, with thin native adapters per tool (opencode, Claude Code and GitHub Copilot today).
 
 ## The 5 layers
 
@@ -124,7 +124,7 @@ cd my-project
 # 2. Write the spec for a user story
 logsayer spec new HU-01
 
-# 3. Add an agent adapter (opencode, claude)
+# 3. Add an agent adapter (opencode, claude, copilot)
 logsayer agent add opencode
 
 # 4. Start a session: check state, work the story
@@ -153,7 +153,7 @@ A document arrived from another team? See
 |---------|-----------|-------|---------|
 | `logsayer init [name]` | — | scaffold | Creates `docs/` + `inbox/` + `AGENTS.md` + `logsayer.toml` |
 | `logsayer init --here` | — | scaffold | Scaffolds into the current directory |
-| `logsayer agent add <opencode\|claude>` | — | coordination | Generates per-role subagents for a tool |
+| `logsayer agent add <opencode\|claude\|copilot>` | — | coordination | Generates the per-role agents of a tool in its native convention |
 | `logsayer inbox` | — | 1 | Lists documents waiting to be placed |
 | `logsayer inbox add <file>` | — | 1 | Moves an external document into `inbox/` |
 | `logsayer spec new <hu>` | `logsayer mentat spec new` | 1 | Creates a minimal HU template |
@@ -200,10 +200,11 @@ A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/ad
 
 ## Roadmap
 
-- **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), opencode/Claude adapters, mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
+- **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
+- **3 (done):** the adapter layer, one engine and three thin adapters. Copilot was the last one, and it was the only one that needed a decision: Copilot separates the agent profile from the path-scoped instructions, so `agent add copilot` writes eight files — four profiles in `.github/agents/` and four instructions in `.github/instructions/logsayer/`.
 - **8 (done):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable).
 - **9 (done):** audit by pass — the scope stops being a promise in the prompt and becomes a table the CLI counts, one row per HU on disk, with the `auditoria_completa` check.
-- **7 (pending):** community presets, more agents on demand (copilot, cursor, gemini, hermes).
+- **7 (pending):** community presets, more agents on demand (cursor, gemini, hermes).
 - **10 (deferred):** extended frontmatter — it only lands if it hurts.
 
 ## Acknowledgment & license

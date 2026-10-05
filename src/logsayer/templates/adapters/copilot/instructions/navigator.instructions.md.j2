@@ -1,0 +1,12 @@
+---
+applyTo: "docs/project_state.md"
+excludeAgent: "code-review"
+---
+Instrucciones del snapshot de {{ project_name }} (rol Navigator). Aplican solo a `docs/project_state.md`.
+
+- El snapshot se **sobrescribe**: no es acumulativo. Cada cierre de sesión reescribe el presente y descarta el pasado.
+- El contador de "HUs cerradas desde la última auditoría" lo verifica `logsayer check` contra el disco (`contador_hus_al_dia`): si lo declarado queda por debajo de lo derivado, el chequeo avisa.
+- El snapshot **no** invalida el veredicto de una HU: reescribirlo no es un cambio de criterio.
+- Las decisiones activas son las últimas 3-5 y van por referencia (número y frase corta). El registro completo con su porqué está en `docs/02_technical/decisions.md`.
+- `docs/project_state.md` es Capa 2: no es una sexta capa ni un logbook. No lo appendees.
+- Este archivo no declara permisos: `applyTo` decide dónde se inyecta la instrucción, no qué puede escribir el rol.

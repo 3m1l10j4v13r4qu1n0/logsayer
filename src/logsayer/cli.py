@@ -94,10 +94,10 @@ agent_typer = typer.Typer(
 def agent_add(
     agent: Annotated[
         str,
-        typer.Argument(help="Agente destino (opencode | claude)."),
+        typer.Argument(help="Agente destino (opencode | claude | copilot)."),
     ],
 ) -> None:
-    """Genera subagentes por rol en la convención nativa del agente."""
+    """Genera los roles del framework en la convención nativa del agente."""
     try:
         spec = resolve_adapter(agent)
         root, written = generate_adapters(Path.cwd(), spec)

@@ -190,3 +190,11 @@ Los cuatro `.instructions.md` llevan `excludeAgent: "code-review"`. Los roles de
 La Decidora tiene que escribir la tabla de veredictos, así que el perfil de Copilot declara `edit` sobre su archivo. Declarar menos de lo que el prompt exige es la clase de defecto que D24 prohíbe, y es **exactamente** lo que encontró la auditoría del 2026-10-02 en `templates/adapters/claude/truthsayer.md.j2`, cuyo `tools:` no incluye `Write` ni `Edit` mientras su línea 24 dice que escribe la tabla. Eso no se arregla de paso acá: es otro adaptador, otra herramienta y otra HU, y quedó con fila propia (D-12) en la cola. Mezclarlo en el PR del adaptador nuevo habría hecho la revisión de D-07 más difícil de leer y la deuda más difícil de fechar.
 
 *Referencias: bitácora fase 3 del 2026-10-02, spec §6 (documentación oficial de GitHub Copilot: `custom-agents-configuration`, `create-custom-agents`, `custom-instructions-support`) y fila D-07 de `inbox/feedback_deudas_auditoria.md`.*
+
+## D41. `adaptadores_declarados` mide el conjunto de archivos del adaptador, no cada archivo
+
+El check avisa cuando un nombre de `[adapters] enabled` está en `SUPPORTED` pero **ninguno** de los archivos de su `AdapterSpec` existe en el proyecto. Se descartó la lectura archivo por archivo (avisar si falta alguno): quien escribió uno a mano ya ejecutó la parte de `agent add`, y un subagente borrado a conciencia no es un pendiente. Medirlo archivo por archivo convertiría cada proyecto que depure su `.claude/agents/` en un aviso permanente, que es la clase de ruido que D19 ya descartó para `indice_al_dia` y que D35 descartó para el contador de HUs: **un aviso que aparece siempre no avisa nada**. Lo que el check mide es la distancia estructural entre declarar y ejecutar (D30), y esa distancia se cierra ejecutando `agent add`, no completando el conjunto a mano.
+
+Lo que sí se avisa, en orden: un nombre fuera de `SUPPORTED` no tiene nada que ejecutar y por eso corta antes de mirar archivos; después, los nombres declarados sin ningún archivo. Ninguna de las dos ramas corrige, como todo lo demás en Suk.
+
+*Referencias: HU-18, spec §4, y la fila D-08 de `inbox/feedback_deudas_auditoria.md`.*

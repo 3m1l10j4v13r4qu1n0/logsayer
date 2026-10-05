@@ -1,0 +1,12 @@
+---
+applyTo: "docs/logbooks/**"
+excludeAgent: "code-review"
+---
+Instrucciones de la bitácora de {{ project_name }} (rol Reverend Mother). Aplican a `docs/logbooks/`, que es memoria histórica append-only.
+
+- Los logbooks **no se editan**: se les appendea una entrada con `logsayer log add "..."` y, con aprobación previa del usuario. `logsayer log index` reconstruye `00_index.md`.
+- No se borra ni se reescribe una entrada, ni siquiera para corregirla: la corrección es una entrada nueva.
+- La partición es mecánica: al superar las {{ bitacora_max_lines }} líneas, `log add` crea el logbook siguiente y actualiza el índice.
+- Un registro de decisión que va al logbook no se escribe además en el estado: el estado es snapshot del presente, la bitácora es el pasado.
+- `00_index.md` es el mapa: se lee bajo demanda y no se recorre `docs/logbooks/` completa al inicio de sesión.
+- Este archivo no declara permisos: `applyTo` decide dónde se inyecta la instrucción, no qué puede escribir el rol.

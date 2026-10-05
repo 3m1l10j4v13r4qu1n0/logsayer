@@ -1,0 +1,12 @@
+---
+applyTo: "docs/06_audits/**"
+excludeAgent: "code-review"
+---
+Instrucciones de los reportes de auditoría de {{ project_name }} (rol Truthsayer). Aplican a `docs/06_audits/`, que es Capa 4: verificación semántica.
+
+- Un reporte se **sella**: una vez escrito y aprobado, no se reescribe. La divergencia que aparezca después se registra en el reporte nuevo, y el viejo queda como historia.
+- La tabla de veredictos la escribe la Decidora (el CLI scaffoldea las filas). El archivo `audit_<fecha>.prompt.md` es el brief de la pasada y no se edita.
+- `audit_<fecha>-01.md` aparece cuando ya existe un reporte con la fecha de hoy: no lo borres ni lo renombres, es el mismo alcance en dos cortes.
+- Una fila con veredicto `sin cambios` está resuelta: la heredó el CLI porque ni la HU ni lo que cita cambiaron. Re-auditarla es trabajo perdido.
+- El alcance de una auditoría es `docs/04_user_stories/` completo, siempre: el retrieval ordena por dónde leer, nunca recorta qué es auditable.
+- Este archivo no declara permisos: `applyTo` decide dónde se inyecta la instrucción, no qué puede escribir el rol.

@@ -7,6 +7,37 @@ fase: fase7
 
 ## Fase actual del roadmap
 
+**Fases 0 a 9 cerradas, y ahora las nueve tienen código.** La 7 fue la última que
+tenía diseño escrito y superficie sin implementación: cerró con HU-18
+(`init --preset`). Con ella no queda ninguna fase del roadmap a medio hacer — la
+10 sigue desplazada a propósito (solo entra si duele) y lo que queda abierto son
+deudas con fila propia, no fases.
+
+La decisión de fondo la fijó el humano el 2026-09-30 y la implementación la
+ejecutó sin discutirla: el preset es un **snapshot, no una herencia viva**, así que
+`init` copia los valores al `logsayer.toml` y el preset deja de existir para ese
+proyecto. No hay que resolver "qué pasa si el preset cambia en la próxima versión"
+y el TOML se edita sin sorpresas. El precio —actualizar logsayer no actualiza los
+umbrales de un proyecto ya scaffoldeado— se paga con dos checks, no con una
+migración.
+
+Lo que salió del contraste con el código y no estaba escrito:
+
+- **`default` no declara la tabla `[logsayer]`.** Como la precedencia son dos
+  escalones (el preset elige; cada clave que declara pisa el default del dataclass
+  y las que omite caen al default), no declarar nada es literalmente "usar los
+  defaults". Así `init` e `init --preset default` coinciden **por construcción** y
+  no por valores repetidos: el test compara las dos salidas en vez de afirmar una
+  lista.
+- **`LogsayerConfig.from_mapping()`** saca la validación de `[logsayer]` de
+  `load()`. Sin eso, el preset se validaría contra un segundo validador y un preset
+  roto podría llegar al scaffold — que era justo el punto 1 de la fila D-08.
+- **D41**: `adaptadores_declarados` mide el **conjunto** de archivos de un
+  adaptador y no cada archivo. Quien escribió uno a mano ya ejecutó la parte, y un
+  subagente borrado a conciencia no es un pendiente; medirlo archivo por archivo
+  daría un aviso permanente en cada proyecto que depure, que es la clase de ruido
+  que D19 y D35 ya descartaron.
+
 Fases 0 a 9 **cerradas**. La fase 3 cerró con HU-17: el adaptador de GitHub
 Copilot, el último de los tres, y el único que necesitó una decisión de diseño
 (D26 lo decidió así: uno solo, no los cuatro que el registro enumeraba).
@@ -57,13 +88,14 @@ corrida).
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
 
-Pendientes, en orden: la implementación de la fase 7 (`init --preset`), cuyo
-diseño está escrito en la spec §4 y todavía no toca código (D-08, con D29, D30 y
-D31); las dos deudas de la auditoría (D-12 y D-13); la regeneración de
-`examples/hello-logsayer/`, deliberadamente al final porque las deudas anteriores
-tocan exactamente su superficie (D-10); y Trusted Publishing (OIDC) para borrar
-`PYPI_API_TOKEN` (D-11). La cola vive en `inbox/feedback_deudas_auditoria.md`.
-La fase 10 (frontmatter extendido) sigue desplazada: solo entra si duele.
+Pendientes, en orden: las dos deudas de la auditoría del 2026-10-02 — D-12 (el
+`truthsayer` de Claude Code declara `tools:` sin `Write`/`Edit` y no puede llenar la
+tabla que su propio prompt le asigna) y D-13 (los README de HU-13 y HU-16 citan
+rutas que no resuelven); la regeneración de `examples/hello-logsayer/`, que era lo
+que faltaba para que la superficie quedara quieta (D-10, con D34 decidiendo el
+momento); y Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN` (D-11). La cola
+vive en `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido)
+sigue desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -108,15 +140,19 @@ La fase 10 (frontmatter extendido) sigue desplazada: solo entra si duele.
 - D39 — Los ocho archivos de Copilot llevan `excludeAgent: "code-review"`: los cuatro roles son de una sesión de trabajo con contexto propio y no existen en una sesión de code review, donde el contexto es el diff.
 - D40 — En el adaptador de Copilot la Decidora declara `edit` y la Reverenda Madre no, porque su única escritura es `logsayer log add`. La falta equivalente del `truthsayer` de Claude Code (D-12) es una deuda aparte y no se corrigió en la misma HU: tocar dos adaptadores a la vez es cómo una HU deja de ser auditable.
 
+- D41 — `adaptadores_declarados` mide el conjunto de archivos de un adaptador, no cada archivo: avisa cuando un nombre de `[adapters] enabled` está en `SUPPORTED` pero **ninguno** de los archivos de su `AdapterSpec` existe. Quien escribió uno a mano ya ejecutó la parte de `agent add`, y un subagente borrado a conciencia no es un pendiente; medirlo archivo por archivo convertiría cada proyecto que depure su `.claude/agents/` en un aviso permanente, que es el ruido que D19 descartó para `indice_al_dia` y D35 para el contador.
+
 ## HUs cerradas desde la última auditoría
 
-1
+2
 
 Auditoría del **2026-10-02** aprobada y contador reseteado a 0 (venían 3 HUs
-desde el 2026-09-29: HU-14, HU-15 y HU-16). Desde el reset cerró **HU-17**, el
-adaptador de Copilot (D-07), que era el último de la fase 3.
+desde el 2026-09-29: HU-14, HU-15 y HU-16). Desde el reset cerraron **HU-17**, el
+adaptador de Copilot (D-07), y **HU-18**, los presets de proyecto (D-08), que
+cerró la fase 7.
 
 El reporte del 2026-10-02 selló 16 HUs y su tabla está completa, así que
-`auditoria_completa` y `contador_hus_al_dia` avisan por HU-17 hasta la próxima
-corrida: es D20 funcionando — el alcance es la tabla sellada, no el directorio —
-y no un hueco. Umbral 3: faltan 2 HUs para que la Decidora vuelva a correr.
+`auditoria_completa` y `contador_hus_al_dia` avisan por HU-17 y HU-18 hasta la
+próxima corrida: es D20 funcionando — el alcance es la tabla sellada, no el
+directorio — y no un hueco. Umbral 3: falta 1 HU para que la Decidora vuelva a
+correr, y HU-19 sería la que la dispare.

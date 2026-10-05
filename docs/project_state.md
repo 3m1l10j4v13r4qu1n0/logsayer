@@ -1,5 +1,5 @@
 ---
-fase: fase7
+fase: fase3
 ---
 # Estado del proyecto — logsayer
 
@@ -7,25 +7,31 @@ fase: fase7
 
 ## Fase actual del roadmap
 
-Fases 0 a 6, 8 y 9 cerradas
+Fases 0 a 6, 8 y 9 cerradas. En curso: **fase 3**, que se cierra con un solo
+adaptador, Copilot (D26).
 
-La fase 9 (auditoría por pasada) cerró con la auditoría del 2026-09-29: es la
-primera corrida con alcance verificable — el CLI scaffoldeó una fila por HU del
-disco y `auditoria_completa` mide la cobertura parseando la tabla, no
-interpretando prosa. Veredicto: 11 de 13 HUs cumplen, HU-07 y HU-13 quedaron
-parciales (`docs/06_audits/audit_2026-09-29.md`).
+Auditoría **2026-10-02** (scaffoldeada ese día, pasada ejecutada el 2026-10-05)
+aprobada y contador reseteado a 0. Resultado: 13 HUs `cumple`, 1 `sin cambios`
+por herencia (HU-09), 2 `parcial` y ninguna `no cumple`
+(`docs/06_audits/audit_2026-10-02.md`). Las dos parciales —HU-05 y HU-08—
+comparten una sola causa externa: `examples/hello-logsayer/README.md` promete
+una salida real del CLI que dejó de serlo cuando las fases 8 y 9 movieron la
+superficie (D-10, con D34 decidiendo el momento de regenerarlo). La síntesis no
+encontró contradicciones entre veredictos.
 
-La deuda de HU-07 se cierra con HU-14, en la rama
-`feature/hu-14-cierre-deuda-hu-07`: el aviso de conversión de `doc new` sale por
-stdout (D25), la superficie de permisos de cada adaptador queda declarada con la
-unidad que su herramienta soporta y la excepción de Claude Code escrita en la
-spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
-(`audit run --hu` apuntaba a `docs/06_audits/None`).
+La corrida de hoy confirma dos cosas del mecanismo: `auditoria_completa` pasó a
+`OK` con la tabla de 15 veredictos llena **antes** del reset, que es la
+precondición que D-02 pedía; y `contador_hus_al_dia` derivó 0 contra el 3
+declarado sin avisar, porque declarar de más es el caso benigno (D35). Y
+`audit run --reset-counter` sobre el reporte sellado salió con código 1 sin
+scaffoldear ningún archivo nuevo: el defecto que D-02 reportaba no se reproduce.
 
-La deuda transversal de esa auditoría —el contador de HUs que nadie verificaba—
-se cierra con HU-15, en la rama `feature/hu-15-contador-verificable`: el check
-`contador_hus_al_dia` deriva el contador del disco y avisa cuando lo declarado
-queda por debajo (D35).
+La auditoría dejó además dos deudas nuevas, en
+`inbox/feedback_deudas_auditoria.md`: **D-12** (el `truthsayer` de Claude
+declara `tools:` sin `Write`/`Edit` y por lo tanto no puede llenar la tabla que
+su propio prompt le asigna — la clase de defecto que D24 prohíbe al revés) y
+**D-13** (los README de HU-13 y HU-16 citan rutas que no resuelven, lo que
+bloquea su herencia en cada corrida).
 
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
@@ -42,16 +48,15 @@ publicó por el job, no a mano (run `36750950132`). El token sigue siendo una
 credencial de larga vida y Trusted Publishing (OIDC) tiene fila propia en la
 cola, aparte del código.
 
-Pendientes, en orden: la deuda de código que queda de la auditoría del
-2026-09-29 — `audit run --reset-counter` scaffoldea un reporte nuevo con el
-alcance entero vacío antes de resetear (D-02); la regeneración de
-`examples/hello-logsayer/`, que hoy promete una salida real del CLI que no es
-(D10, y deliberadamente al final del ciclo, después de D-02, D-07 y D-08, que
-tocan su superficie); la implementación de la fase 7, cuyo diseño quedó escrito
-en la spec §4 y todavía no toca código (D29, D30, D31); el adaptador Copilot de
-la fase 3 (D26); y Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`. La
-cola vive en `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter
-extendido) sigue desplazada: solo entra si duele.
+Pendientes, en orden: el adaptador Copilot de la fase 3 (D26, deuda D-07), que ya
+tiene decisiones de diseño tomadas y registradas; la implementación de la fase 7
+(`init --preset`), cuyo diseño quedó escrito en la spec §4 y todavía no toca
+código (D-08, con D29, D30 y D31); la regeneración de
+`examples/hello-logsayer/`, deliberadamente al final porque las dos deudas
+anteriores tocan exactamente su superficie (D-10); las dos deudas que dejó esta
+auditoría (D-12 y D-13); y Trusted Publishing (OIDC) para borrar
+`PYPI_API_TOKEN` (D-11). La cola vive en `inbox/feedback_deudas_auditoria.md`.
+La fase 10 (frontmatter extendido) sigue desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -65,7 +70,7 @@ extendido) sigue desplazada: solo entra si duele.
 - D8 — El CLI mueve y nombra; el contenido lo deriva el subagente Mentat.
 - D9 — Los checks de Capa 1 (`header_capa1`, `estado_al_dia`) se validaron contra este mismo repo: fallaron el primer día.
 - D10 — El CLI propone la capa, no la decide: sin default a `02_technical/`; elige Mentat.
-- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25 y **0.7.0 desde el 2026-09-30** (comprobado en la JSON API y reinstalando el paquete desde PyPI en un venv limpio: expone `inbox` y `doc` y no expone `memory`). El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
+- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25, 0.7.0 desde el 2026-09-30 y **0.8.0 desde el 2026-10-01**, comprobado en la JSON API y reinstalando el paquete desde PyPI en un venv limpio (0.7.0 expone `inbox` y `doc` y no expone `memory`; 0.8.0 expone `memory index/status/search` y `audit run --hu`, y los dos funcionan sobre un proyecto nuevo). El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
 - D12 — El grafo de memoria es capa transversal de navegación, no una sexta capa: indexa las cinco, no compite con ellas.
 - D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
 - D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.
@@ -93,16 +98,16 @@ extendido) sigue desplazada: solo entra si duele.
 
 ## HUs cerradas desde la última auditoría
 
-3
+0
 
-Auditoría del 2026-09-29 aprobada y contador reseteado a 0 (venían 4 HUs desde
-el 2026-09-27: HU-10, HU-11, HU-12 y HU-13; el contador del estado decía 2 y el
-disco decía 4 — el número que dispara la auditoría era el único valor del marco
-que ningún check verificaba). Umbral 3: a la tercera HU cerrada, la Decidora
-vuelve a correr y ahora el alcance lo verifica `auditoria_completa`.
+Auditoría del **2026-10-02** aprobada y contador reseteado a 0 (venían 3 HUs
+desde el 2026-09-29: HU-14, HU-15 y HU-16; el número que dispara la auditoría lo
+confirma hoy `contador_hus_al_dia`, que antes ningún check verificaba — D35).
+Umbral 3: a la tercera HU cerrada la Decidora vuelve a correr, y ahora el
+alcance lo verifica `auditoria_completa` y el contador lo deriva el disco.
 
-Desde el reset cierran HU-14 (deuda de HU-07), HU-15 (D-01, el contador
-verificable) y HU-16 (D-02, `audit reset` + shim deprecado para `--reset-counter`).
-El número real es 3 y un check lo confirma (D35). `auditoria_completa` sigue
-avisando hasta la próxima corrida —HU-14, HU-15 y HU-16 no estaban en el alcance
-del reporte sellado—: es el comportamiento diseñado, no un hueco.
+Desde el reset no cierra ninguna HU todavía: la siguiente es **HU-17, el
+adaptador de Copilot** (D-07), que va ya con sus decisiones de diseño tomadas.
+El reporte del 2026-10-02 selló 16 HUs y su tabla está completa, así que
+`auditoria_completa` avisará por HU-17 hasta la próxima corrida: es D20
+funcionando, no un hueco.

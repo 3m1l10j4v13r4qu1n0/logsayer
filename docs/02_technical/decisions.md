@@ -1,6 +1,6 @@
 # Decisiones técnicas — logsayer
 
-Fecha: 2026-09-25 · Estado: vigente
+Fecha: 2026-10-02 · Estado: vigente
 
 ## Resumen
 
@@ -46,6 +46,12 @@ El motor no redacta contenido ni convierte formatos. `doc new` scaffoldea el doc
 ## D10. El CLI propone la capa, el subagente la decide (spec §3)
 
 `doc route <archivo>` devuelve filas candidatas y decide solo con señal inequívoca: extensión no markdown, o una HU declarada en el nombre. La primera implementación clasificaba por palabras del nombre y, ante lo desconocido, devolvía `docs/02_technical/` por defecto. Se descartó: un `.md` de visión de producto terminado en la carpeta técnica sin que nadie lo notara es exactamente el tipo de error que el marco de 5 capas existe para evitar (spec §2). Además ahora detecta el reenvío de un documento que ya existe y avisa que no se duplique. *Discusión cerrada con el humano el 2026-09-25.*
+
+## D11. La publicación en PyPI es un hecho verificado, no una intención
+
+La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25, 0.7.0 desde el 2026-09-30 y **0.8.0 desde el 2026-10-01**, comprobado en la JSON API y reinstalando el paquete desde PyPI en un venv limpio (0.7.0 expone `inbox` y `doc` y no expone `memory`; 0.8.0 expone `memory index/status/search` y `audit run --hu`, y los dos funcionan sobre un proyecto nuevo). El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
 
 ## D12. El grafo es capa transversal, no una sexta capa
 
@@ -102,3 +108,85 @@ Un adaptador declara la restricción de single-writer con la unidad más fina qu
 ## D25. Un aviso que solo vive en el documento generado no avisa a quien lo pidió
 
 `inbox.stage()` ya producía el aviso de conversión de un original no markdown y `create_doc` lo escribía en el bloque `## Fuente` del documento creado; la spec §3 dice que el CLI "avisa que hay que hacerlo antes", y el aviso no salía por stdout. La spec no dice dónde: el documento generado lo lee la Decidora, después, y el humano que tipeó `doc new` no lo va a abrir para descubrir que su PDF quedó archivado sin convertir. `create_doc()` devuelve ahora el aviso como dato y la terminal lo muestra, sin cambiar el veredicto: el CLI no convierte PDF ni docx y no va a empezar a hacerlo. *Referencia: HU-14.*
+
+## D26. La fase 3 se cierra con un solo adaptador: Copilot
+
+La fase 3 se cierra con un solo adaptador, Copilot: es el de mayor uso y su convención (`AGENTS.md` más instrucciones por path con `applyTo`) es la más expresiva. No se implementan los cuatro que el registro enumera a la vez: `hermes` no tiene ni un referente verificable, y cuatro adaptadores a medio hacer son cuatro superficies de permisos que la herramienta puede ignorar en silencio (D24).
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D27. El release de 0.8.0 mueve `main`
+
+El release de 0.8.0 mueve `main`: PR `develop` → `main` y el tag semver sobre ese merge. `main` quedó en 0.6.0 solo porque era ancestro estricto de `develop` y no había forma de que contuviera únicamente la fase 6; con las fases 8 y 9 ya integradas, el tag y el contenido de `main` vuelven a decir lo mismo y el desfase termina acá.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D28. La publicación es manual hasta que exista CI
+
+La publicación es manual hasta que exista CI: el repo no tiene `.github/workflows/`, así que `v0.7.0` salió de una shell con `UV_PUBLISH_TOKEN` y no hay ruta automatizada. La deuda entra como fila propia de la cola y no solo en la bitácora, porque la bitácora no es la cola de trabajo entre sesiones y `bandeja_entrada` mide antigüedad, no existencia: sin fila, ningún check la va a avisar.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D29. El idioma del contenido no es eje del preset
+
+El idioma del contenido no es eje del preset: detrás de una clave `lang` hay i18n de los 17 templates —con los 8 de adaptadores, que además difieren entre opencode y Claude Code— y no hay ninguna bandera de idioma en el CLI. Queda fuera de la v1 y el idioma es decisión de proyecto, que es lo que el propio `AGENTS.md` generado ya dice: superficie pública en inglés, contenido generado en el idioma del proyecto. Si entra alguna vez, entra como fase propia.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D30. `init` declara y `agent add` ejecuta
+
+`init` declara y `agent add` ejecuta: el preset escribe `[adapters] enabled` y el único comando que genera archivos de adaptador sigue siendo `agent add`. La razón es dura y no es de gusto: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir (D4) y podría pisar subagentes editados por el usuario. La distancia entre declarar y ejecutar la reconcilia el check `adaptadores_declarados`, que avisa y no corrige.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D31. Los umbrales se quedan en `[logsayer]` y no se mueven
+
+Los umbrales se quedan en `[logsayer]` y no se mueven: cambiar la tabla a `[thresholds]` haría que todo proyecto ya scaffoldeado dejara de encontrar sus umbrales y volviera a los defaults **en silencio**, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración". `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, así que el cambio no rompe nada y no obliga a migrar archivos versionados de los usuarios.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D32. La CI corre sobre la matriz que declara el paquete
+
+La CI corre sobre la matriz que declara el paquete: 3.11, 3.12 y 3.13 son las que dicen `requires-python` y los classifiers, así que la batería corre en todas ellas o la CI estaría declarando menos que el paquete. Y `ruff format --check` queda **fuera** de la puerta: hoy quiere reformatear 34 archivos, y un gate que arranca rojo es deuda nueva.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D33. El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo
+
+El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo: D11 ("la publicación es un hecho verificado, no una intención") vuelto mecanismo, y convierte el fallo de "un paquete publicado que miente" en "un corte con mensaje". El token sigue siendo una credencial de larga vida en el repo — Trusted Publishing (OIDC) es el cierre pendiente y tiene fila propia, aparte del release.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D34. `examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora
+
+`examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora: promete ser salida real del CLI, así que cualquier cambio en la superficie lo vuelve falso, y las cuatro deudas que quedan (D-01, D-02, D-07, D-08) caen exactamente sobre sus líneas. Editarlo hoy a mano sería hacer trabajo que se tira.
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D35. El contador de HUs del estado se verifica contra el disco, pero el umbral no se mueve
+
+El contador de HUs del estado se verifica contra el disco, pero el umbral no se mueve: el check `contador_hus_al_dia` (HU-15) deriva el contador —directorios `HU-*` sin veredicto en el reporte que selló— y avisa en `warn` solo cuando lo declarado subestima, que es el único sentido que retrasa la auditoría. Declarar de más es el caso benigno y no avisa (decidir 3); sin auditoría sellada no se mide, en vez de asumir que todo está pendiente, porque un aviso permanente no avisa (como D19 con `indice_al_dia`). Y `logsayer audit status` muestra el derivado pero el veredicto de umbral sigue siendo el del declarado: el derivado informa, no mueve el gate, porque cambiar cuándo se propone auditar en un comando publicado es una decisión de umbral, no una corrección de número. El check se validó contra este mismo repo y **avisó el primer día** (declaraba 1, derivadas 2), que es la prueba de que no es decorativo (D9).
+
+*Referencia: bitácora fase 7/8/9 y snapshot del 2026-10-02.*
+
+## D36. Copilot se integra con perfiles por rol más instrucciones por path, no con un prompt único
+
+D26 individuality adaptador y este es su diseño. `agent add copilot` genera ocho archivos: cuatro perfiles en `.github/agents/<rol>.agent.md` y cuatro instrucciones en `.github/instructions/logsayer/<rol>.instructions.md`. El motivo de que sean dos capas y no una es que `applyTo` es el mecanismo nativo de alcance por ruta, y sin él un solo prompt tendría que hacer el trabajo de cuatro: las reglas de la Decidora (escribe la tabla de veredictos en `docs/06_audits/`), las de la Reverenda Madre (bitácora append-only, escribe solo vía `logsayer log add`) y las del Navegante (solo lee `project_state.md`) no se pueden separar si todas llegan siempre. Ninguna de las dos capas duplica el otro: el perfil declara **quién es** y **qué superficie de herramientas** tiene, y la instrucción declara **en qué rutas y con qué reglas** trabaja. Los thresholds siguen en `logsayer.toml` y no se escriben en ningún prompt.
+
+## D37. No se genera `.github/copilot-instructions.md`
+
+Copilot consume `AGENTS.md` de forma nativa, así que ese archivo ya es el prompt de proyecto del CLI y no hace falta un instructions file global encima. Generar los dos sería una segunda fuente de verdad para lo mismo, y de las que peor se detectan: dos archivos que se contradicen no los separa ningún check. El frontmatter es `description` y el resto de la superficie va en la instrucción; el nombre del archivo no lleva `name:` porque es opcional y duplicaría el nombre del archivo.
+
+## D38. `applyTo` es contexto por path, no permiso — y la superficie de herramientas va en `tools:`
+
+Copilot no declara permisos por ruta: `applyTo` filtra **dónde se inyecta** la instrucción, no quién puede escribir, así que el patrón de escritura única por rol que sostienen el resto de los adaptadores no se puede declarar como campo. Por D24 se escribe lo que la herramienta declara y nada más: `tools:` en el perfil con los alias canónicos (`read`, `search`, `edit`, `execute`, `agent`, `web`, `todo`), y se omiten `target`, `argument-hint`, `handoffs` y `infer` — esta última está retirada. Los aliases desconocidos se ignoran en silencio, así que el test verifica contra la lista canónica y no contra lo que «funciona en mi máquina». La restricción de escritura única queda escrita en la prosa del template, como la excepción de Claude Code (D24).
+
+## D39. El code review de Copilot queda excluido de las instrucciones de los roles
+
+Los cuatro `.instructions.md` llevan `excludeAgent: "code-review"`. Los roles de logsayer no existen en una sesión de code review y el `applyTo` de las rutas de `docs/` no la alcanzaría igual, así que sin esto el prompt de cada rol aparece en un contexto donde el rol no puede actuar. El campo es una exclusión real —la doc oficial lo documenta como tal— y no un permiso: deja de inyectarse la instrucción, nada más.
+
+## D40. El `truthsayer` de Copilot declara `edit`, y la falta de `Write`/`Edit` en el de Claude se reporta aparte
+
+La Decidora tiene que escribir la tabla de veredictos, así que el perfil de Copilot declara `edit` sobre su archivo. Declarar menos de lo que el prompt exige es la clase de defecto que D24 prohíbe, y es **exactamente** lo que encontró la auditoría del 2026-10-02 en `templates/adapters/claude/truthsayer.md.j2`, cuyo `tools:` no incluye `Write` ni `Edit` mientras su línea 24 dice que escribe la tabla. Eso no se arregla de paso acá: es otro adaptador, otra herramienta y otra HU, y quedó con fila propia (D-12) en la cola. Mezclarlo en el PR del adaptador nuevo habría hecho la revisión de D-07 más difícil de leer y la deuda más difícil de fechar.
+
+*Referencias: bitácora fase 3 del 2026-10-02, spec §6 (documentación oficial de GitHub Copilot: `custom-agents-configuration`, `create-custom-agents`, `custom-instructions-support`) y fila D-07 de `inbox/feedback_deudas_auditoria.md`.*

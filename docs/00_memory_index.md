@@ -5,7 +5,7 @@
 01_global/mission.md                 · nivel 0 · vigente · 2026-09-25 · mission
 project_state.md                     · nivel 0 · — · — · project, state
 02_technical/audit_protocol.md       · nivel 1 · vigente · 2026-09-29 · audit, protocolo, worklist, coverage
-02_technical/decisions.md            · nivel 1 · vigente · 2026-09-25 · decisions
+02_technical/decisions.md            · nivel 1 · vigente · 2026-10-02 · decisions
 02_technical/memory_architecture.md  · nivel 1 · vigente · 2026-09-28 · memoria, retrieval
 02_technical/tech-stack.md           · nivel 1 · vigente · 2026-09-25 · tech, stack
 04_user_stories/HU-01/README.md      · nivel 2 · — · — · hu-01
@@ -23,6 +23,7 @@ project_state.md                     · nivel 0 · — · — · project, state
 04_user_stories/HU-13/README.md      · nivel 2 · — · — · hu-13
 04_user_stories/HU-14/README.md      · nivel 2 · — · — · hu-14
 04_user_stories/HU-15/README.md      · nivel 2 · — · — · hu-15
+04_user_stories/HU-16/README.md      · nivel 2 · — · — · hu-16
 03_process/definition-of-ready.md    · nivel 3 · — · — · definition, of, ready
 03_process/merge-checklist.md        · nivel 3 · — · — · merge, checklist
 05_agile_methodology/metodologia.md  · nivel 3 · — · — · metodologia
@@ -32,6 +33,8 @@ project_state.md                     · nivel 0 · — · — · project, state
 06_audits/audit_2026-09-27.prompt.md · nivel 3 · — · — · audit, prompt
 06_audits/audit_2026-09-29.md        · nivel 3 · — · — · audit
 06_audits/audit_2026-09-29.prompt.md · nivel 3 · — · — · audit, prompt
+06_audits/audit_2026-10-02.md        · nivel 3 · — · — · audit
+06_audits/audit_2026-10-02.prompt.md · nivel 3 · — · — · audit, prompt
 logbooks/00_index.md                 · nivel 3 · — · —
 logbooks/logbook_dogfooding_01.md    · nivel 3 · — · — · logbook, dogfooding
 logbooks/logbook_fase1_01.md         · nivel 3 · — · — · logbook, fase1

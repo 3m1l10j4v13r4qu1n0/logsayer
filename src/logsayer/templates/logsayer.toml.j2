@@ -3,3 +3,11 @@ session_close_context_threshold = {{ "%.2f"|format(session_close_context_thresho
 bitacora_max_lines = {{ bitacora_max_lines }}   # líneas por archivo atómico de bitácora antes de particionar
 audit_threshold_hus = {{ audit_threshold_hus }}   # HUs cerradas desde última auditoría → disparar audit
 inbox_max_age_days = {{ inbox_max_age_days }}   # días sin ubicar en inbox/ → avisar que la bandeja envejece
+{% if preset %}
+
+[project]
+preset = "{{ preset }}"   # qué preset originó este archivo — informativo, lo vigila el check preset_conocido
+
+[adapters]
+enabled = [{% for name in adapters_enabled %}"{{ name }}"{{ "" if loop.last else ", " }}{% endfor %}]   # qué adaptadores declara el preset; el que los genera es `agent add`
+{% endif %}

@@ -1,0 +1,10 @@
+# Preset `default` — el baseline: no sobreescribe nada.
+#
+# `[logsayer]` está ausente a propósito, y esa ausencia **es** el contrato: cada
+# clave que un preset declara pisa el default del dataclass y la que omite cae al
+# default, así que no declarar la tabla entera es literalmente "usar los defaults".
+# Es lo que hace que `init` y `init --preset default` produzcan el mismo
+# `logsayer.toml` hoy y después de que el dataclass cambie.
+
+[adapters]
+enabled = []   # qué adaptadores declara el preset; el que los genera es `agent add`

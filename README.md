@@ -152,6 +152,7 @@ A document arrived from another team? See
 | Command | Dune alias | Layer | Purpose |
 |---------|-----------|-------|---------|
 | `logsayer init [name]` | — | scaffold | Creates `docs/` + `inbox/` + `AGENTS.md` + `logsayer.toml` |
+| `logsayer init [name] --preset <default\|minimal>` | — | scaffold | Same, plus a preset of project conventions written into `logsayer.toml` |
 | `logsayer init --here` | — | scaffold | Scaffolds into the current directory |
 | `logsayer agent add <opencode\|claude\|copilot>` | — | coordination | Generates the per-role agents of a tool in its native convention |
 | `logsayer inbox` | — | 1 | Lists documents waiting to be placed |
@@ -165,7 +166,7 @@ A document arrived from another team? See
 | `logsayer memory search "…"` | `logsayer navigator memory search` | transversal | Ranked candidates by tag (`--capa`, `--limit`) |
 | `logsayer log add "…"` | `logsayer reverend-mother log add` | 3 | Appends a logbook entry (auto-partition) |
 | `logsayer log index` | `logsayer reverend-mother log index` | 3 | Rebuilds `00_index.md` from real files |
-| `logsayer check` | `logsayer suk doctor` | 4 | Mechanical checks: structure, no layer mixing, pending inbox |
+| `logsayer check` | `logsayer suk doctor` | 4 | Mechanical checks: structure, no layer mixing, pending inbox, preset and declared adapters |
 | `logsayer audit run` | `logsayer truthsayer audit run` | 4 | Generates the audit report + semantic prompt |
 | `logsayer audit status` | `logsayer truthsayer audit status` | 4 | Shows HU counter vs threshold, last report |
 | `logsayer process check` | `logsayer fremen verify` | 5 | Process checks: Dor, coordination agreement, index freshness |
@@ -181,6 +182,45 @@ bitacora_max_lines = 400                 # lines/logbook file before partitionin
 audit_threshold_hus = 3                  # HUs closed since last audit → trigger audit
 inbox_max_age_days = 14                 # days unprocessed in inbox/ → warn about it aging
 ```
+
+With `--preset`, two more blocks are written:
+
+```toml
+[project]
+preset = "minimal"   # which preset produced this file — informational
+
+[adapters]
+enabled = ["claude"]   # what the preset declares; `agent add` is what generates them
+```
+
+### Presets
+
+`init --preset <name>` resolves a bundle of conventions and writes it **once**, into
+`logsayer.toml`. Two ship with the package:
+
+| Preset | Adapters declared | Thresholds |
+|---|---|---|
+| `default` | none | the defaults — it overrides nothing |
+| `minimal` | `claude` | looser: propose session close later, partition the logbook later, audit every 5 HUs, let `inbox/` age 30 days |
+
+The preset is a **snapshot, not a live inheritance**: after `init` copies the values,
+the preset stops existing for that project, so there is no "what if the preset changes
+in the next version" to resolve, and the TOML stays editable without surprises. The
+price is that upgrading logsayer does not upgrade the thresholds of a project already
+scaffolded — which is what the two checks below are for.
+
+Two mechanical checks keep the new keys honest, and neither corrects, only warns:
+
+- **`preset_conocido`** — the declared preset no longer ships in the installed
+  package. That is the real failure mode of a snapshot, and the warning names the
+  version so you can tell when it happened.
+- **`adaptadores_declarados`** — a name in `enabled` has no adapter implemented, or it
+  has one but its files are not in the project yet. `init` declares and `agent add`
+  generates: that distance is structural, and the check is what shows it.
+
+`init --here` on a project that already has a `logsayer.toml` does **not** apply the
+preset and says so — the project's TOML wins. Applying it halfway would be worse than
+not applying it.
 
 ## How a session flows
 
@@ -204,7 +244,7 @@ A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/ad
 - **3 (done):** the adapter layer, one engine and three thin adapters. Copilot was the last one, and it was the only one that needed a decision: Copilot separates the agent profile from the path-scoped instructions, so `agent add copilot` writes eight files — four profiles in `.github/agents/` and four instructions in `.github/instructions/logsayer/`.
 - **8 (done):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable).
 - **9 (done):** audit by pass — the scope stops being a promise in the prompt and becomes a table the CLI counts, one row per HU on disk, with the `auditoria_completa` check.
-- **7 (pending):** community presets, more agents on demand (cursor, gemini, hermes).
+- **7 (done):** community presets — `init --preset <default|minimal>` writes a bundle of conventions once, as TOML inside the package. Still open in that phase: more agents on demand (cursor, gemini, hermes).
 - **10 (deferred):** extended frontmatter — it only lands if it hurts.
 
 ## Acknowledgment & license

@@ -23,6 +23,9 @@ from logsayer.core import (
 )
 from logsayer.core.checks import CheckResult
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
+from logsayer.core.presets import Preset, PresetError
+from logsayer.core.presets import available as available_presets
+from logsayer.core.presets import load as load_preset
 from logsayer.core.project import project_name
 from logsayer.scaffold import (
     RENDERED_FILES,
@@ -67,15 +70,46 @@ def init(
         bool,
         typer.Option("--here", help="Scaffoldea en el directorio actual."),
     ] = False,
+    preset_name: Annotated[
+        str | None,
+        typer.Option(
+            "--preset",
+            help=(
+                "Preset de proyecto a materializar en logsayer.toml "
+                f"({', '.join(available_presets())})."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Inicializa la estructura docs/ + AGENTS.md + logsayer.toml."""
     try:
         target, name = resolve_target(project_name, here, Path.cwd())
-        existing = {rel for rel in RENDERED_FILES if (target / rel).is_file()}
-        written = scaffold(target, name, LogsayerConfig.load(), adopt=here)
+        preset = None if preset_name is None else load_preset(preset_name)
+    except (ScaffoldError, PresetError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    existing = {rel for rel in RENDERED_FILES if (target / rel).is_file()}
+    # El TOML del proyecto manda: en modo adopt, aplicar el preset sobre un
+    # `logsayer.toml` que ya existe sería editarlo a medias sin avisar (D4).
+    skipped_preset = (
+        preset is not None and here and (target / "logsayer.toml").is_file()
+    )
+    applied: Preset | None = None if (preset is None or skipped_preset) else preset
+    try:
+        written = scaffold(
+            target,
+            name,
+            LogsayerConfig.load() if applied is None else applied.thresholds,
+            adopt=here,
+            preset=applied,
+        )
     except ScaffoldError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Scaffold listo en {target}")
+    if skipped_preset and preset is not None:
+        typer.echo(
+            f"Preset {preset.name!r} no aplicado: logsayer.toml ya existe y manda "
+            "(modo adopt). Editá el TOML a mano si querés esos umbrales."
+        )
     if here and existing:
         typer.echo("Modo adopt: preservados (ya existían, no se sobrescriben):")
         for rel in sorted(existing):

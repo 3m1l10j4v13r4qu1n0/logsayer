@@ -2,6 +2,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+from logsayer import __version__
 from logsayer.cli import app
 
 runner = CliRunner()
@@ -160,3 +161,82 @@ def test_help_lists_check_and_process(cwd_project: Path) -> None:
     assert result.exit_code == 0
     assert "check" in result.output
     assert "process" in result.output
+
+
+def _declare(root: Path, toml: str) -> None:
+    (root / "logsayer.toml").write_text(toml, encoding="utf-8")
+
+
+def test_preset_known_is_ok_when_declared_and_shipped(cwd_project: Path) -> None:
+    _declare(cwd_project, '[project]\npreset = "minimal"\n')
+    result = runner.invoke(app, ["check"])
+    assert "✔ preset_conocido" in result.output, result.output
+
+
+def test_preset_known_warns_when_the_snapshot_points_to_a_missing_preset(
+    cwd_project: Path,
+) -> None:
+    # El fallo real de un snapshot: el preset dejó de distribuirse y el TOML
+    # sigue apuntando a él.
+    _declare(cwd_project, '[project]\npreset = "estricto"\n')
+    result = runner.invoke(app, ["check"])
+    assert "! preset_conocido" in result.output, result.output
+    assert "estricto" in result.output
+    assert __version__ in result.output
+
+
+def test_preset_known_is_ok_without_a_declared_preset(cwd_project: Path) -> None:
+    # Un proyecto scaffoldeado antes de la fase 7 no declara nada, y eso no es
+    # un pendiente: el aviso tiene que ser para el snapshot roto, no por todos.
+    result = runner.invoke(app, ["check"])
+    assert "✔ preset_conocido" in result.output, result.output
+
+
+def test_declared_adapters_warns_before_agent_add_runs(cwd_project: Path) -> None:
+    _declare(cwd_project, '[adapters]\nenabled = ["claude"]\n')
+    result = runner.invoke(app, ["check"])
+    assert "! adaptadores_declarados" in result.output, result.output
+    assert "agent add claude" in result.output
+
+
+def test_declared_adapters_is_ok_after_agent_add(cwd_project: Path) -> None:
+    _declare(cwd_project, '[adapters]\nenabled = ["claude"]\n')
+    runner.invoke(app, ["agent", "add", "claude"])
+    result = runner.invoke(app, ["check"])
+    assert "✔ adaptadores_declarados" in result.output, result.output
+
+
+def test_declared_adapters_warns_on_a_name_without_adapter(cwd_project: Path) -> None:
+    _declare(cwd_project, '[adapters]\nenabled = ["hermes"]\n')
+    result = runner.invoke(app, ["check"])
+    assert "! adaptadores_declarados" in result.output, result.output
+    assert "hermes" in result.output
+
+
+def test_declared_adapters_stays_quiet_with_a_partial_set(cwd_project: Path) -> None:
+    # Se mide contra el conjunto entero y no archivo por archivo (D41): quien
+    # escribió uno a mano ya ejecutó la parte, y un archivo borrado a conciencia
+    # no es un pendiente.
+    _declare(cwd_project, '[adapters]\nenabled = ["claude"]\n')
+    runner.invoke(app, ["agent", "add", "claude"])
+    (cwd_project / ".claude" / "agents" / "truthsayer.md").unlink()
+    result = runner.invoke(app, ["check"])
+    assert "✔ adaptadores_declarados" in result.output, result.output
+
+
+def test_declared_adapters_is_ok_without_declarations(cwd_project: Path) -> None:
+    result = runner.invoke(app, ["check"])
+    assert "✔ adaptadores_declarados" in result.output, result.output
+
+
+def test_declared_adapters_warns_on_a_malformed_list(cwd_project: Path) -> None:
+    _declare(cwd_project, '[adapters]\nenabled = "claude"\n')
+    result = runner.invoke(app, ["check"])
+    assert "! adaptadores_declarados" in result.output, result.output
+
+
+def test_both_checks_stay_ok_on_a_fresh_project(cwd_project: Path) -> None:
+    # La batería entera depende de esto: los dos checks nuevos no pueden avisar
+    # en un proyecto scaffoldeado que no pidió preset.
+    result = runner.invoke(app, ["check"])
+    assert "Estado: sano." in result.output, result.output

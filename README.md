@@ -235,9 +235,7 @@ not applying it.
 
 ## Example session
 
-A full transcript — run against a freshly scaffolded project — lives in [`examples/hello-logsayer/`](examples/hello-logsayer/README.md). It walks through scaffold, story creation, logbook entries, verification, and agent adapters, with the actual output of every command.
-
-> **Note:** the transcript was captured against 0.6.0 and predates the `memory *` commands, `audit run --hu`, `audit reset` and `init --preset`. Regenerating it against the current CLI is queued; until then, take the command table above as the reference.
+A full transcript — run against a freshly scaffolded project — lives in [`examples/hello-logsayer/`](examples/hello-logsayer/README.md). It walks through scaffold, story creation, logbook entries, verification, agent adapters, and memory, with the actual output of every command.
 
 ## Multi-agent design
 

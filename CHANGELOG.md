@@ -2,7 +2,9 @@
 
 Todos los cambios notables de logsayer quedan documentados acá, por versión, en orden cronológico inverso. Formato [Keep a Changelog](https://keepachangelog.com/es/1.1.0/), versionado [semver](https://semver.org/lang/es/).
 
-## [Unreleased]
+## [0.9.0] — 2026-10-07
+
+Fases 3 y 7 del roadmap + las deudas de las auditorías del 2026-09-29 y 2026-10-02 que quedaban. La fase 3 cerró con el adaptador de **Copilot** (D26: uno solo, el de mayor uso y cuyo convención —perfil más instrucción por path— es la más expresiva) y la fase 7 con **`init --preset`**, el snapshot de convenciones que entra una sola vez en el TOML del proyecto. Este release también es la puerta de la evidencia de D-11: la primera versión que publica el job con **Trusted Publishing (OIDC)**, sin credencial de larga vida en el repo.
 
 ### Added
 - **`logsayer init --preset <nombre>`** (HU-18, D-08): fase 7. Un preset es un bundle de convenciones con dos ejes —qué adaptadores deja declarados y qué umbrales pone— y se materializa **una sola vez** en el `logsayer.toml` del proyecto. El preset es un **snapshot, no una herencia viva**: `init` copia los valores y el preset deja de existir para ese proyecto, así que no hay que resolver "qué pasa si el preset cambia en la próxima versión" y el TOML se edita sin sorpresas. Se distributionan dos, como TOML dentro del paquete y no como código: `default` (no sobreescribe nada) y `minimal` (un adaptador, umbrales más laxos). `strict` quedó fuera a propósito — un preset sin caso real es superficie para mantener.
@@ -10,11 +12,19 @@ Todos los cambios notables de logsayer quedan documentados acá, por versión, e
 - **Checks `preset_conocido` y `adaptadores_declarados`** (Suk): los dos hacen legales las dos claves nuevas, porque un valor entra solo si un comando lo consume mecánicamente (D13). El primero avisa cuando el preset declarado ya no existe en el paquete instalado —el fallo real de un snapshot— y nombra la versión. El segundo avisa cuando un nombre de `enabled` no tiene adaptador, o tiene uno pero sus archivos no están en el proyecto: se mide contra el conjunto entero y no archivo por archivo (D41), porque quien escribió uno a mano ya ejecutó la parte y un archivo borrado a conciencia no es un pendiente. Ninguno corrige.
 - **Check `contador_hus_al_dia`** (HU-15, D-01): el contador de HUs cerradas del snapshot deja de ser una afirmación y se mide contra el disco — el derivado cuenta los directorios `HU-*` sin veredicto en el reporte que selló. Avisa en `warn` cuando lo declarado **subestima** lo que hay en disco, que es el único sentido que retrasa la auditoría (el caso benigno, declarar de más, no avisa). Sin auditoría sellada no se mide, en vez de asumir que todas las HUs están pendientes. Es la deuda transversal de la auditoría del 2026-09-29: el estado declaraba 2 HUs con 4 en disco y ningún check lo veía.
 - **Comando `logsayer audit reset`** (HU-16, D-02): reinicia el contador de HUs. Rechaza con error nombrando las HUs pendientes si `pending_verdicts()` no está vacío; no crea ni modifica reportes de auditoría.
+- **Adaptador de GitHub Copilot** (HU-17, D-07): fase 3, capa de coordinación. Motor único y adaptador delgado como en opencode y Claude Code, pero con la convención nativa de Copilot: **dos archivos por rol** — perfil en `.github/agents/<rol>.agent.md` e instrucción en `.github/instructions/logsayer/<rol>.instructions.md` (D36) — porque con un archivo solo los cuatro prompts llegarían a todos los contextos del repo. `applyTo` es filtro de contexto, no permiso: la escritura única por capa queda en la prosa de cada template y no en un campo (D38), los ocho archivos llevan `excludeAgent: "code-review"` (D39) y la Decidora declara `edit` mientras la Reverenda Madre no (D40). No se genera `.github/copilot-instructions.md`: Copilot consume `AGENTS.md` nativamente y un segundo archivo sería una segunda fuente de verdad para lo mismo (D37).
 
 ### Changed
 - **`logsayer audit status` muestra el derivado** del disco junto al contador declarado, y avisa cuando el declarado queda por debajo. El veredicto de umbral sigue siendo el del contador declarado — el derivado informa, no mueve el gate.
 - **Shim deprecado**: `logsayer audit run --reset-counter` ahora sale con código 1 y mensaje que apunta a `logsayer audit reset`, sin ejecutar auditoría ni reiniciar el contador.
 - **`LogsayerConfig.from_mapping()`**: la validación de `[logsayer]` sale de `load()` para que un preset se valide contra el **mismo** contrato que lee el TOML del proyecto. Sin eso el preset tendría un segundo validador, y un preset roto podría llegar al scaffold. `LogsayerConfig.load()` no cambia de comportamiento.
+- **La publicación pasa a Trusted Publishing** (D-11): el job pide `id-token: write` en el job `publicar` y `uv publish --trusted-publishing always` acuña el OIDC de GitHub y lo cambia por un token de corta vida contra PyPI. El `env: UV_PUBLISH_TOKEN` y el secreto `PYPI_API_TOKEN` desaparecen del workflow y del repo (D33 sigue igual: el tag, `pyproject.toml` y `__version__` tienen que decir lo mismo, y el publisher del lado de PyPI es el que autoriza el repo + workflow + environment).
+- **Los candidatos de `doc route` no repiten el prefijo de capa** y el README queda coherente consigo mismo (feedback de 2026-10-05): roadmap reordenado 0–9 sin `hermes`, disclaimer Dune al final, quick start con un solo `check` y paso `--preset`, fila `audit run --hu`, paso concreto para actualizar umbrales de un proyecto viejo y nota de idioma (D29). El juicio del CLI presenta la lista sin capa; la tabla completa de `routing.py` la conserva porque ahí distingue de Capa 3 y 4.
+- **`examples/hello-logsayer/` regenerado contra el CLI real** (D-10): el transcript —que era la causa del `parcial` de HU-05 y HU-08 en la auditoría del 2026-10-02— deja de ser una copia vieja de 0.6.0 y es la salida real, sesión corrida de nuevo con los 13 checks de Suk, los 5 de Fremen, el frontmatter `fase:`, el bloque `tags:` de `doc new`, Copilot con 8 archivos y las fases 8 y 9 enteras.
+
+### Fixed
+- **El `truthsayer` de Claude Code escribe la tabla de veredictos** (D-12): declaraba `tools: Read, Grep, Glob, Bash` sin `Write` ni `Edit` mientras su prompt le pedía llenar `docs/06_audits/` — el defecto que D24 prohíbe al revés. `tools:` pasó a incluir `Write, Edit` en el template, que es toda la superficie declarativa que esa herramienta tiene.
+- **Citas muertas en HU-13, HU-16 y HU-18** (D-13): rutas que no resolvían y que bloqueaban la herencia en cada corrida (una cita muerta bloquea la herencia por la decisión 5 de HU-12). Corregidas las tres; 0 citas muertas en las 16 HUs.
 
 ## [0.8.0] — 2026-09-30
 
@@ -121,7 +131,7 @@ Fase 6 del roadmap: **ingreso de documentos**. El feedback de usabilidad del 202
 - **`logsayer.toml`** con los umbrales (spec §4): `session_close_context_threshold = 0.70`, `bitacora_max_lines = 400`, `audit_threshold_hus = 3`.
 - Valida slug y destino vacío; empaquetado hatchling (`pyproject.toml`).
 
-[Unreleased]: https://github.com/3m1l10j4v13r4qu1n0/logsayer/compare/v0.8.0...HEAD
+[0.9.0]: https://github.com/3m1l10j4v13r4qu1n0/logsayer/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/3m1l10j4v13r4qu1n0/logsayer/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/3m1l10j4v13r4qu1n0/logsayer/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/3m1l10j4v13r4qu1n0/logsayer/compare/v0.5.0...v0.6.0

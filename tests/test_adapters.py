@@ -122,6 +122,25 @@ def test_mentat_claude_declara_la_superficie_y_su_excepcion(cwd_project: Path) -
     assert "la herramienta**, no la ruta" in content
 
 
+def test_claude_truthsayer_declara_write_edit_y_reverend_mother_no(
+    cwd_project: Path,
+) -> None:
+    """La Decidora escribe la tabla de veredictos: en Claude Code el allowlist
+    `tools:` es toda la superficie declarativa (D24), así que sin `Write, Edit`
+    declara que no puede. La Reverenda Madre se queda sin ellos porque su única
+    escritura es `logsayer log add` (D40)."""
+    assert runner.invoke(app, ["agent", "add", "claude"]).exit_code == 0
+    truthsayer = (
+        cwd_project / ".claude" / "agents" / "truthsayer.md"
+    ).read_text(encoding="utf-8")
+    reverend = (
+        cwd_project / ".claude" / "agents" / "reverend-mother.md"
+    ).read_text(encoding="utf-8")
+    assert "tools: Read, Grep, Glob, Write, Edit, Bash" in truthsayer.split("---")[1]
+    assert "Write" not in reverend.split("---")[1]
+    assert "Edit" not in reverend.split("---")[1]
+
+
 def test_los_dos_adaptadores_invocan_los_mismos_comandos_de_mentat(
     cwd_project: Path,
 ) -> None:

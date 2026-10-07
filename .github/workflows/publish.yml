@@ -35,6 +35,9 @@ jobs:
     needs: bateria
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -66,7 +69,5 @@ jobs:
           PY
       - name: Construir
         run: uv build
-      - name: Publicar
-        run: uv publish
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publicar (Trusted Publishing / OIDC, sin token)
+        run: uv publish --trusted-publishing always

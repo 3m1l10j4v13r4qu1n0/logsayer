@@ -8,7 +8,7 @@
 
 ## Qué hay que construir
 
-- `src/logsayer/presets/default.toml` y `minimal.toml`: los presets son **datos**,
+- `src/logsayer/presets/default.toml` y `src/logsayer/presets/minimal.toml`: los presets son **datos**,
   TOML dentro del paquete, leídos con `importlib.resources`. Agregar un preset es
   agregar un archivo y no toca lógica.
 - `src/logsayer/core/presets.py`: `available()`, `load(nombre) -> Preset` y

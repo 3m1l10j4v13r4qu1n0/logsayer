@@ -12,7 +12,8 @@
   - En `audit run`, el flag `--reset-counter` pasa a ser **shim deprecado**: corta con código 1 y mensaje
     `--reset-counter ya no resetea: usá logsayer audit reset` **antes** de llamar a `audit.run_audit()`.
 - Templates de adaptadores: `src/logsayer/templates/adapters/opencode/truthsayer.md.j2` y
-  `claude/truthsayer.md.j2` actualizan la instrucción a `logsayer audit reset`.
+  `src/logsayer/templates/adapters/claude/truthsayer.md.j2` actualizan la instrucción a
+  `logsayer audit reset`.
 - Tests: ajustar el test del flag y agregar regresiones para `audit reset`.
 
 ## Cómo se valida

@@ -16,23 +16,23 @@ duele.
 - **Auditoría:** 2026-10-02 aprobada (pasada el 2026-10-05), contador reseteado.
   13 `cumple`, 1 `sin cambios` (HU-09), 2 `parcial` (HU-05 y HU-08), 0 `no cumple`.
 - **Deudas de esa auditoría cerradas:** D-12 (truthsayer de Claude con `Write`/`Edit`,
-  PR #25) y D-13 (citas muertas en HU-13/HU-16/HU-18, PR #26). El detalle vive en
-  `inbox/feedback_deudas_auditoria.md`.
+  PR #25), D-13 (citas muertas en HU-13/HU-16/HU-18, PR #26) y **D-10** —
+  `examples/hello-logsayer/` regenerado contra el CLI real (0.8.0) el 2026-10-07
+  (D34: la superficie quedó quieta con la fase 7; el transcript nuevo cubre los 13
+  checks de Suk, los 5 de Fremen, el frontmatter `fase:` + aviso de `log add`, el
+  bloque `tags:` de `doc new`, Copilot con 8 archivos, y las fases 8 y 9 enteras).
+  El detalle vive en `inbox/feedback_deudas_auditoria.md`.
 - **Feedback de README** (`inbox/feedback_README.md`, 2026-10-05) aplicado en
   PR #27: roadmap reordenado, disclaimer al final, quick start limpio, fila
   `audit run --hu`, candidatos de `doc route` sin el prefijo de capa repetido.
-  Quedan pendientes de esta fila solo los puntos de `project_state.md` (esta
-  reescritura) y la regeneración del ejemplo (D-10).
+  De esa fila solo quedaba la regeneración del ejemplo, que es D-10 (cerrada).
 
 Pendientes, en orden:
 
-1. **D-10** — regenerar `examples/hello-logsayer/` contra la superficie actual
-   (D34: al final del ciclo; el README ya lleva la nota provisoria). Es lo que
-   falta para cerrar HU-05 y HU-08 del todo.
-2. **D-11** — Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`.
-3. **D-07** — fila sin cerrar de HU-17 en el reporte del 2026-10-02
+1. **D-11** — Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`.
+2. **D-07** — fila sin cerrar de HU-17 en el reporte del 2026-10-02
    (`auditoria_completa` avisa); resolver con `audit run --hu` o completando la fila.
-4. Fase 10 (frontmatter extendido) — desplazada, solo si duele.
+3. Fase 10 (frontmatter extendido) — desplazada, solo si duele.
 
 La cola vive en `inbox/feedback_deudas_auditoria.md` y `inbox/feedback_README.md`.
 

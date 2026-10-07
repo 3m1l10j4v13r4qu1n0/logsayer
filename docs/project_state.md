@@ -7,50 +7,39 @@ fase: fase7
 
 ## Fase actual del roadmap
 
-Fases 0 a 6, 8 y 9 cerradas
+**Fases 0 a 9 cerradas con código, sin fases a medio hacer.** La 7 (`init --preset`,
+HU-18) fue la última con diseño escrito y superficie sin implementar; cerró el
+ciclo. La 10 (frontmatter extendido) sigue desplazada a propósito: solo entra si
+duele.
 
-La fase 9 (auditoría por pasada) cerró con la auditoría del 2026-09-29: es la
-primera corrida con alcance verificable — el CLI scaffoldeó una fila por HU del
-disco y `auditoria_completa` mide la cobertura parseando la tabla, no
-interpretando prosa. Veredicto: 11 de 13 HUs cumplen, HU-07 y HU-13 quedaron
-parciales (`docs/06_audits/audit_2026-09-29.md`).
+- **Versión:** 0.8.0 publicada en PyPI el 2026-10-01 por el job de CI (tag `v0.8.0`).
+- **Auditoría:** 2026-10-02 aprobada (pasada el 2026-10-05), contador reseteado.
+  13 `cumple`, 1 `sin cambios` (HU-09), 2 `parcial` (HU-05 y HU-08), 0 `no cumple`.
+- **Deudas de esa auditoría cerradas:** D-12 (truthsayer de Claude con `Write`/`Edit`,
+  PR #25), D-13 (citas muertas en HU-13/HU-16/HU-18, PR #26) y **D-10** —
+  `examples/hello-logsayer/` regenerado contra el CLI real (0.8.0) el 2026-10-07
+  (D34: la superficie quedó quieta con la fase 7; el transcript nuevo cubre los 13
+  checks de Suk, los 5 de Fremen, el frontmatter `fase:` + aviso de `log add`, el
+  bloque `tags:` de `doc new`, Copilot con 8 archivos, y las fases 8 y 9 enteras).
+  El detalle vive en `inbox/feedback_deudas_auditoria.md`.
+- **Feedback de README** (`inbox/feedback_README.md`, 2026-10-05) aplicado en
+  PR #27: roadmap reordenado, disclaimer al final, quick start limpio, fila
+  `audit run --hu`, candidatos de `doc route` sin el prefijo de capa repetido.
+  De esa fila solo quedaba la regeneración del ejemplo, que es D-10 (cerrada).
 
-La deuda de HU-07 se cierra con HU-14, en la rama
-`feature/hu-14-cierre-deuda-hu-07`: el aviso de conversión de `doc new` sale por
-stdout (D25), la superficie de permisos de cada adaptador queda declarada con la
-unidad que su herramienta soporta y la excepción de Claude Code escrita en la
-spec §6 y en el template (D24). HU-13 ya había quedado resuelta por el PR #9
-(`audit run --hu` apuntaba a `docs/06_audits/None`).
+Pendientes, en orden:
+
+1. **D-11** — Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`.
+2. **D-07** — fila sin cerrar de HU-17 en el reporte del 2026-10-02
+   (`auditoria_completa` avisa); resolver con `audit run --hu` o completando la fila.
+3. Fase 10 (frontmatter extendido) — desplazada, solo si duele.
+
+La cola vive en `inbox/feedback_deudas_auditoria.md` y `inbox/feedback_README.md`.
 
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
-
-CI desde el PR #16 (merge `fb7e604`): `.github/workflows/ci.yml` corre la
-batería en cada PR a `develop` y en cada push a `develop` sobre 3.11, 3.12 y
-3.13 — verificado en verde sobre las tres (run `36743442993`), y
-`.github/workflows/publish.yml` publica en PyPI cuando se pushea un tag semver,
-previa batería y previa verificación de que el tag declara la versión de
-`pyproject.toml` y la de `__version__`. **La fila D-09 está a medias, y por
-eso el orden sigue igual**: la batería existe, la publicación la prueba el tag
-`v0.8.0` del release siguiente. Ese secreto ya está creado en el repo.
-
-Pendientes, en orden: redactar la sección `[0.8.0]` del CHANGELOG con las fases
-8 y 9 y bumpear a `0.8.0` (0.7.0 = fase 6 ya está publicada con el tag
-`v0.7.0` en `087a482`, el 2026-09-30), cuyo release mueve `main` (D27); las dos
-deudas de código de la auditoría del 2026-09-29 — el contador de HUs del estado
-no lo verifica ningún check, y `audit run --reset-counter` scaffoldea un
-reporte nuevo con el alcance entero vacío antes de resetear; la regeneración de
-`examples/hello-logsayer/`, que hoy promete una salida real del CLI que no es
-(D10, y deliberadamente al final del ciclo); la implementación de la fase 7,
-cuyo diseño quedó escrito en la spec §4 y todavía no toca código (D29, D30,
-D31); fase 3 restante, que ya no es elegir un adaptador sino uno solo, decidido:
-Copilot (D26). Y una deuda que se acaba de sumar: el token de PyPI sigue siendo
-una credencial de larga vida en el repo, así que Trusted Publishing (OIDC)
-queda para después del release de 0.8.0, no mezclado con él. La cola vive en
-`inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido) sigue
-desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -64,7 +53,7 @@ desplazada: solo entra si duele.
 - D8 — El CLI mueve y nombra; el contenido lo deriva el subagente Mentat.
 - D9 — Los checks de Capa 1 (`header_capa1`, `estado_al_dia`) se validaron contra este mismo repo: fallaron el primer día.
 - D10 — El CLI propone la capa, no la decide: sin default a `02_technical/`; elige Mentat.
-- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0 en vivo desde el 2026-09-25 y **0.7.0 desde el 2026-09-30** (comprobado en la JSON API y reinstalando el paquete desde PyPI en un venv limpio: expone `inbox` y `doc` y no expone `memory`). El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
+- D11 — La publicación en PyPI es un hecho verificado, no una intención: 0.6.0, 0.7.0 y **0.8.0** (2026-10-01) comprobados en la JSON API y reinstalando el paquete en un venv limpio. El token de PyPI viaja por variable de entorno; el `3m1l10j4v13r4qu1n0` que los docs llamaban "token" es el usuario de GitHub, no una credencial.
 - D12 — El grafo de memoria es capa transversal de navegación, no una sexta capa: indexa las cinco, no compite con ellas.
 - D13 — Un campo de frontmatter entra solo si un comando lo consume mecánicamente: el contrato queda en `tags`.
 - D14 — El retrieval ordena la lectura, nunca recorta el alcance: la auditoría sigue siendo sobre `04_user_stories/` completo.
@@ -75,30 +64,38 @@ desplazada: solo entra si duele.
 - D19 — `indice_al_dia` mira solo Capa 1: `log add` y el cierre de sesión tocarían el índice en casi todos los cierres, y un aviso permanente no avisa.
 - D20 — El alcance de la auditoría es una tabla que cuenta el CLI: una fila por directorio `HU-*`, escrita por el CLI y releída por `parse_verdicts()`. El hueco se ve en el `git diff` del reporte.
 - D21 — `docs/project_state.md` no invalida la herencia de una HU: se reescribe en cada cierre de sesión, y contarlo invalidaría para siempre el veredicto de toda HU que lo menciona.
-- D22 — `--hu` repite una pasada y no escribe reporte: el alcance vive en la tabla, y un reporte con una sola fila sería el último y dejaría el resto sin cubrir.
+- D22 — `--hu` repite una pasada y no escribe reporte: el alcance vive en la tabla, y un reporte con una sola fila sería el último y dejaría el resto sin cubierto.
 - D23 — La síntesis lee solo la tabla de veredictos, y solo si algún veredicto cambió: abrir HUs para sintetizar sería una segunda pasada entera.
-- D24 — La superficie de permisos se declara con la unidad que la herramienta soporta: opencode tiene bloque `permissions:` por acción/recurso/efecto, Claude Code solo el allowlist `tools` (granularidad por herramienta). No se escribe un campo que la herramienta pueda ignorar en silencio, y `settings.json` no se genera porque es de sesión.
+- D24 — La superficie de permisos se declara con la unidad que la herramienta soporta: opencode tiene bloque `permissions:` por acción/recurso/efecto, Claude Code solo el allowlist `tools` (granularidad por herramienta), Copilot solo `tools` con alias canónicos y el alcance por ruta como filtro de contexto. No se escribe un campo que la herramienta pueda ignorar en silencio, y `settings.json` no se genera porque es de sesión.
 - D25 — Un aviso que solo vive en el documento generado no avisa a quien lo pidió: `doc new` muestra el aviso de conversión por stdout, además de dejarlo en el bloque `## Fuente`.
-- D26 — La fase 3 se cierra con un solo adaptador, Copilot: es el de mayor uso y su convención (`AGENTS.md` más instrucciones por path con `applyTo`) es la más expresiva. No se implementan los cuatro que el registro enumera a la vez: `hermes` no tiene ni un referente verificable, y cuatro adaptadores a medio hacer son cuatro superficies de permisos que la herramienta puede ignorar en silencio (D24).
-- D27 — El release de 0.8.0 mueve `main`: PR `develop` → `main` y el tag semver sobre ese merge. `main` quedó en 0.6.0 solo porque era ancestro estricto de `develop` y no había forma de que contuviera únicamente la fase 6; con las fases 8 y 9 ya integradas, el tag y el contenido de `main` vuelven a decir lo mismo y el desfase termina acá.
-- D28 — La publicación es manual hasta que exista CI: el repo no tiene `.github/workflows/`, así que `v0.7.0` salió de una shell con `UV_PUBLISH_TOKEN` y no hay ruta automatizada. La deuda entra como fila propia de la cola y no solo en la bitácora, porque la bitácora no es la cola de trabajo entre sesiones y `bandeja_entrada` mide antigüedad, no existencia: sin fila, ningún check la va a avisar.
-- D29 — El idioma del contenido no es eje del preset: detrás de una clave `lang` hay i18n de los 17 templates —con los 8 de adaptadores, que además difieren entre opencode y Claude Code— y no hay ninguna bandera de idioma en el CLI. Queda fuera de la v1 y el idioma es decisión de proyecto, que es lo que el propio `AGENTS.md` generado ya dice: superficie pública en inglés, contenido generado en el idioma del proyecto. Si entra alguna vez, entra como fase propia.
-- D30 — `init` declara y `agent add` ejecuta: el preset escribe `[adapters] enabled` y el único comando que genera archivos de adaptador sigue siendo `agent add`. La razón es dura y no es de gusto: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su propia promesa de no sobrescribir (D4) y podría pisar subagentes editados por el usuario. La distancia entre declarar y ejecutar la reconcilia el check `adaptadores_declarados`, que avisa y no corrige.
-- D31 — Los umbrales se quedan en `[logsayer]` y no se mueven: cambiar la tabla a `[thresholds]` haría que todo proyecto ya scaffoldeado dejara de encontrar sus umbrales y volviera a los defaults **en silencio**, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración". `[project]` y `[adapters]` son bloques nuevos que conviven con el viejo, así que el cambio no rompe nada y no obliga a migrar archivos versionados de los usuarios.
-- D32 — La CI corre sobre la matriz que declara el paquete: 3.11, 3.12 y 3.13 son las que dicen `requires-python` y los classifiers, así que la batería corre en todas ellas o la CI estaría declarando menos que el paquete. Y `ruff format --check` queda **fuera** de la puerta: hoy quiere reformatear 34 archivos, y un gate que arranca rojo es deuda nueva.
-- D33 — El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo: D11 ("la publicación es un hecho verificado, no una intención") vuelto mecanismo, y convierte el fallo de "un paquete publicado que miente" en "un corte con mensaje". El token sigue siendo una credencial de larga vida en el repo — Trusted Publishing (OIDC) es el cierre pendiente y tiene fila propia, aparte del release.
-- D34 — `examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora: promete ser salida real del CLI, así que cualquier cambio en la superficie lo vuelve falso, y las cuatro deudas que quedan (D-01, D-02, D-07, D-08) caen exactamente sobre sus líneas. Editarlo hoy a mano sería hacer trabajo que se tira.
+- D26 — La fase 3 se cierra con un solo adaptador, Copilot: es el de mayor uso y su convención (`AGENTS.md` más instrucciones por path con `applyTo`) es la más expresiva. No se implementan los cuatro que el registro enumera a la vez: `hermes` no tiene ni un referente verificable, y cuatro adaptadores a medio hacer son cuatro superficies de permisos que la herramienta puede ignorar en silencio (D24). **Ejecutada en HU-17.**
+- D27 — El release de 0.8.0 mueve `main`: PR `develop` → `main` y el tag semver sobre ese merge. `main` quedó en 0.6.0 solo porque era ancestro estricto de `develop`; con las fases 8 y 9 ya integradas, el tag y el contenido de `main` volvieron a decir lo mismo.
+- D28 — La publicación es manual hasta que exista CI: el repo no tenía `.github/workflows/`, así que `v0.7.0` salió de una shell con `UV_PUBLISH_TOKEN`. La deuda entró como fila propia de la cola y no solo en la bitácora, porque la bitácora no es la cola de trabajo entre sesiones y `bandeja_entrada` mide antigüedad, no existencia. **Cerrada:** la CI existe y el tag `v0.8.0` publicó por el job.
+- D29 — El idioma del contenido no es eje del preset: detrás de una clave `lang` hay i18n de los templates —con los de adaptadores, que además difieren entre opencode, Claude Code y Copilot— y no hay ninguna bandera de idioma en el CLI. Queda fuera de la v1 y el idioma es decisión de proyecto.
+- D30 — `init` declara y `agent add` ejecuta: el preset escribe `[adapters] enabled` y el único comando que genera archivos de adaptador sigue siendo `agent add`. La razón es dura: `generate_adapters()` pisa lo que encuentra sin preguntar, así que si `init` generara adaptadores, `init --here` rompería su promesa de no sobrescribir (D4) y podría pisar subagentes editados por el usuario. Lo reconcilia el check `adaptadores_declarados`, que avisa y no corrige.
+- D31 — Los umbrales se quedan en `[logsayer]` y no se mueven: cambiar la tabla a `[thresholds]` haría que todo proyecto ya scaffoldeado dejara de encontrar sus umbrales y volviera a los defaults **en silencio**, porque `LogsayerConfig.load()` no distingue "falta la tabla" de "no hay configuración".
+- D32 — La CI corre sobre la matriz que declara el paquete: 3.11, 3.12 y 3.13. `ruff format --check` queda **fuera** de la puerta: hoy quiere reformatear 34 archivos, y un gate que arranca rojo es deuda nueva.
+- D33 — El tag no publica hasta que tag, `pyproject.toml` y `__version__` dicen lo mismo: D11 vuelto mecanismo. El token sigue siendo una credencial de larga vida — Trusted Publishing (OIDC) es el cierre pendiente y tiene fila propia, aparte del release.
+- D34 — `examples/hello-logsayer/README.md` se regenera al final del ciclo, no ahora: promete ser salida real del CLI, así que cualquier cambio en la superficie lo vuelve falso, y las deudas que quedan (D-01, D-02, D-08, D-10) caen exactamente sobre sus líneas. Editarlo hoy a mano sería hacer trabajo que se tira.
+- D35 — El contador de HUs del estado se verifica contra el disco, pero el umbral no se mueve: el check `contador_hus_al_dia` deriva el contador —directorios `HU-*` sin veredicto en el reporte que selló— y avisa en `warn` solo cuando lo declarado subestima. Declarar de más es el caso benigno; sin auditoría sellada no se mide, en vez de asumir que todo está pendiente. El check se validó contra este mismo repo y **avisó el primer día** (declaraba 1, derivadas 2), que es la prueba de que no es decorativo (D9).
+- D36 — El adaptador de Copilot escribe **dos archivos por rol**: perfil en `.github/agents/<rol>.agent.md` e instrucción en `.github/instructions/logsayer/<rol>.instructions.md`. Con un archivo solo, los cuatro prompts llegarían a todos los contextos del repo y las reglas de la Decidora se aplicarían a los archivos de la Reverenda Madre.
+- D37 — No se genera `.github/copilot-instructions.md`: Copilot consume `AGENTS.md` de forma nativa y ese archivo ya es el prompt de proyecto que genera el CLI, así que el extra sería una segunda fuente de verdad para lo mismo — y dos archivos que se contradicen no los separa ningún check.
+- D38 — `applyTo` es **filtro de contexto, no permiso**: decide dónde se inyecta la instrucción y no qué puede escribir el rol. Por eso la escritura única por capa queda escrita en la prosa de cada template, como ya hacía el adaptador de Claude Code, y no en un campo. `target` existe y es válido, pero se omite: sin valor sirve para GitHub.com y para el IDE, y fijarlo reduciría el alcance. `argument-hint` y `handoffs` no se emiten porque la documentación los declara ignorados en GitHub.com, e `infer` porque está retirada.
+- D39 — Los ocho archivos de Copilot llevan `excludeAgent: "code-review"`: los cuatro roles son de una sesión de trabajo con contexto propio y no existen en una sesión de code review, donde el contexto es el diff.
+- D40 — En el adaptador de Copilot la Decidora declara `edit` y la Reverenda Madre no, porque su única escritura es `logsayer log add`. La falta equivalente del `truthsayer` de Claude Code (D-12) se cerró en su propia fila (PR #25).
+- D41 — `adaptadores_declarados` mide el conjunto de archivos de un adaptador, no cada archivo: avisa cuando un nombre de `[adapters] enabled` está en `SUPPORTED` pero **ninguno** de los archivos de su `AdapterSpec` existe. Quien escribió uno a mano ya ejecutó la parte de `agent add`, y un subagente borrado a conciencia no es un pendiente; medirlo archivo por archivo convertiría cada proyecto que depure su `.claude/agents/` en un aviso permanente, que es el ruido que D19 descartó para `indice_al_dia` y D35 para el contador.
 
 ## HUs cerradas desde la última auditoría
 
-1
+2
 
-Auditoría del 2026-09-29 aprobada y contador reseteado a 0 (venían 4 HUs desde
-el 2026-09-27: HU-10, HU-11, HU-12 y HU-13; el contador del estado decía 2 y el
-disco decía 4 — el número que dispara la auditoría es el único valor del marco
-que ningún check verifica). Umbral 3: a la tercera HU cerrada, la Decidora
-vuelve a correr y ahora el alcance lo verifica `auditoria_completa`.
+Auditoría del **2026-10-02** aprobada y contador reseteado a 0 (venían 3 HUs
+desde el 2026-09-29: HU-14, HU-15 y HU-16). Desde el reset cerraron **HU-17**, el
+adaptador de Copilot (D-07), y **HU-18**, los presets de proyecto (D-08), que
+cerró la fase 7.
 
-Desde el reset cierra HU-14 (deuda de HU-07). `auditoria_completa` va a
-avisar hasta la próxima corrida —HU-14 no estaba en el alcance del reporte
-sellado—: es el comportamiento diseñado, no un hueco.
+El reporte del 2026-10-02 selló 16 HUs y su tabla está completa, así que
+`auditoria_completa` avisa por HU-17 y HU-18 hasta la próxima corrida: es D20
+funcionando — el alcance es la tabla sellada, no el directorio — y no un hueco.
+Umbral 3: falta 1 HU para que la Decidora vuelva a correr, y HU-19 sería la que
+la dispare.

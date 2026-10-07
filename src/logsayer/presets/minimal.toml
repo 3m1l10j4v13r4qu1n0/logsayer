@@ -1,0 +1,17 @@
+# Preset `minimal` — un solo adaptador y umbrales más laxos, para probar la
+# herramienta o arrancar un proyecto chico.
+#
+# "Más laxos" es menos interrupciones: se propone el cierre de sesión más tarde,
+# la bitácora se particiona más lejos, la auditoría espera más HUs cerradas y la
+# bandeja puede envejecer más días antes de que el Suk avise. Todo lo que el
+# preset **no** declara queda en el default del dataclass, como en cualquier
+# preset (spec §4).
+
+[logsayer]
+session_close_context_threshold = 0.85   # % de contexto usado → proponer cierre de sesión
+bitacora_max_lines = 800                  # líneas por archivo atómico de bitácora antes de particionar
+audit_threshold_hus = 5                   # HUs cerradas desde última auditoría → disparar audit
+inbox_max_age_days = 30                   # días sin ubicar en inbox/ → avisar que la bandeja envejece
+
+[adapters]
+enabled = ["claude"]   # qué adaptadores declara el preset; el que los genera es `agent add`

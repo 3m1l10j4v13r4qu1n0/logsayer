@@ -23,6 +23,9 @@ from logsayer.core import (
 )
 from logsayer.core.checks import CheckResult
 from logsayer.core.paths import ProjectRootError, require_logsayer_root
+from logsayer.core.presets import Preset, PresetError
+from logsayer.core.presets import available as available_presets
+from logsayer.core.presets import load as load_preset
 from logsayer.core.project import project_name
 from logsayer.scaffold import (
     RENDERED_FILES,
@@ -67,15 +70,46 @@ def init(
         bool,
         typer.Option("--here", help="Scaffoldea en el directorio actual."),
     ] = False,
+    preset_name: Annotated[
+        str | None,
+        typer.Option(
+            "--preset",
+            help=(
+                "Preset de proyecto a materializar en logsayer.toml "
+                f"({', '.join(available_presets())})."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Inicializa la estructura docs/ + AGENTS.md + logsayer.toml."""
     try:
         target, name = resolve_target(project_name, here, Path.cwd())
-        existing = {rel for rel in RENDERED_FILES if (target / rel).is_file()}
-        written = scaffold(target, name, LogsayerConfig.load(), adopt=here)
+        preset = None if preset_name is None else load_preset(preset_name)
+    except (ScaffoldError, PresetError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    existing = {rel for rel in RENDERED_FILES if (target / rel).is_file()}
+    # El TOML del proyecto manda: en modo adopt, aplicar el preset sobre un
+    # `logsayer.toml` que ya existe sería editarlo a medias sin avisar (D4).
+    skipped_preset = (
+        preset is not None and here and (target / "logsayer.toml").is_file()
+    )
+    applied: Preset | None = None if (preset is None or skipped_preset) else preset
+    try:
+        written = scaffold(
+            target,
+            name,
+            LogsayerConfig.load() if applied is None else applied.thresholds,
+            adopt=here,
+            preset=applied,
+        )
     except ScaffoldError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Scaffold listo en {target}")
+    if skipped_preset and preset is not None:
+        typer.echo(
+            f"Preset {preset.name!r} no aplicado: logsayer.toml ya existe y manda "
+            "(modo adopt). Editá el TOML a mano si querés esos umbrales."
+        )
     if here and existing:
         typer.echo("Modo adopt: preservados (ya existían, no se sobrescriben):")
         for rel in sorted(existing):
@@ -94,10 +128,10 @@ agent_typer = typer.Typer(
 def agent_add(
     agent: Annotated[
         str,
-        typer.Argument(help="Agente destino (opencode | claude)."),
+        typer.Argument(help="Agente destino (opencode | claude | copilot)."),
     ],
 ) -> None:
-    """Genera subagentes por rol en la convención nativa del agente."""
+    """Genera los roles del framework en la convención nativa del agente."""
     try:
         spec = resolve_adapter(agent)
         root, written = generate_adapters(Path.cwd(), spec)
@@ -225,7 +259,8 @@ def doc_route(
         typer.echo(f"→ pista:      {verdict.hint}")
     typer.echo("\nCandidatos:")
     for route in verdict.candidates:
-        typer.echo(f"  · {route.destination} — crear con: {route.command}")
+        destino = route.destination.split(" → ", 1)[-1]
+        typer.echo(f"  · {destino} — crear con: {route.command}")
     typer.echo(
         "\nElegí la fila que corresponde y creá el documento con ese comando. "
         "Si ninguna aplica, la fila es 'El por qué o el cómo de lo que ya se "
@@ -432,7 +467,8 @@ def audit_run(
         bool,
         typer.Option(
             "--reset-counter",
-            help="Reinicia el contador de HUs en project_state.md tras la corrida.",
+            help="[DEPRECATED] No resetea desde audit run. Usá 'logsayer audit reset'.",
+            callback=lambda v: v,
         ),
     ] = False,
     only: Annotated[
@@ -447,9 +483,13 @@ def audit_run(
     lo produce la Decidora."""
     try:
         root = require_logsayer_root(Path.cwd())
-        artifact = audit.run_audit(root, only=only)
         if reset_counter:
-            project.set_closed_hus(root, 0)
+            typer.echo(
+                "--reset-counter ya no resetea: usá logsayer audit reset",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        artifact = audit.run_audit(root, only=only)
     except (ProjectRootError, audit.AuditError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     where = artifact.relative_to(root)
@@ -458,10 +498,7 @@ def audit_run(
         typer.echo("El alcance no cambia: es el input de repetir una fila.")
         return
     typer.echo(f"Estructura y prompt generados en {where}")
-    if reset_counter:
-        typer.echo("Contador de HUs reiniciado a 0 en project_state.md.")
-    else:
-        typer.echo("Contador intacto. Al aprobar, corre de nuevo con --reset-counter.")
+    typer.echo("Contador intacto. Al aprobar, corre logsayer audit reset.")
 
 
 @audit_typer.command("status")
@@ -472,20 +509,55 @@ def audit_status() -> None:
         config = LogsayerConfig.load(root / "logsayer.toml")
         closed = project.read_closed_hus(root)
         last = audit.last_audit(root)
+        derived = audit.derived_closed_hus(root)
         threshold = config.audit_threshold_hus
-    except ProjectRootError as exc:
+    except (ProjectRootError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    current = f"HUs cerradas desde la última auditoría: {closed}"
-    typer.echo(f"{current} (umbral: {threshold})")
+    typer.echo(
+        f"HUs cerradas desde la última auditoría: {closed} (umbral: {threshold})"
+    )
     if last is None:
-        typer.echo("Última auditoría: ninguna reportada.")
+        typer.echo("Última auditoría: ninguna")
     else:
-        typer.echo(f"Última auditoría: {last.name} ({last.relative_to(root)})")
+        typer.echo(f"Última auditoría: {last.relative_to(root)}")
+    if derived is None:
+        typer.echo("Derivadas del disco: no se mide (sin auditoría sellada).")
+    else:
+        where = derived.source.relative_to(root)
+        listing = ", ".join(derived.hus) if derived.hus else "ninguna"
+        typer.echo(
+            f"Derivadas del disco: {derived.count} HU(s) sin veredicto en "
+            f"{where} ({listing})"
+        )
+        if closed < derived.count:
+            typer.echo(
+                "! El contador declarado queda por debajo del derivado: es el "
+                "número que decide si toca auditar, así que el desvase retrasa "
+                "la auditoría. Corregilo en docs/project_state.md."
+            )
     if closed >= threshold:
         typer.echo("Estado: corresponde auditar. Ejecuta: logsayer audit run")
     else:
         missing = threshold - closed
-        typer.echo(f"Estado: no corresponde auditar (faltan {missing} HUs).")
+        typer.echo(f"Estado: en pausa. Restan {missing} HUs para proponer auditoría.")
+
+
+@audit_typer.command("reset")
+def audit_reset() -> None:
+    """Reinicia el contador de HUs (no corrige reportes ni genera artefactos)."""
+    try:
+        root = require_logsayer_root(Path.cwd())
+        pending = audit.pending_verdicts(root)
+    except ProjectRootError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if pending:
+        listing = ", ".join(pending)
+        raise typer.BadParameter(
+            f"Hay HUs con veredicto pendiente: {listing}. "
+            "Completalas antes de resetear."
+        )
+    project.set_closed_hus(root, 0)
+    typer.echo("Contador de HUs reiniciado a 0 en docs/project_state.md.")
 
 
 _register_with_alias("truthsayer", audit_typer, "audit")

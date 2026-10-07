@@ -386,6 +386,45 @@ def pending_verdicts(root: Path, report: Path | None = None) -> list[str]:
     return [hu for hu in hu_ids(root) if hu not in covered]
 
 
+@dataclass(frozen=True)
+class DerivedCounter:
+    """Las HUs que el disco tiene y el reporte que selló no opinó.
+
+    Es el reverso de `read_closed_hus()`, que lee un número que alguien
+    escribió a mano. El derivado no mira el estado: cuenta los directorios
+    `HU-*` sin veredicto en el reporte sellado, así que el desfase entre lo
+    declarado y lo real es medible sin que nadie lo afirme.
+    """
+
+    hus: tuple[str, ...]
+    source: Path
+
+    @property
+    def count(self) -> int:
+        return len(self.hus)
+
+
+def derived_closed_hus(root: Path) -> DerivedCounter | None:
+    """Contador de HUs derivado del disco, o `None` si no se puede derivar.
+
+    `None` no es "cero": es la ausencia del denominador. Sin un reporte con
+    worklist no hay auditoría de la que "desde" medir, y un reporte en prosa
+    —los anteriores a la fase 9— no dice cuáles HUs cubrió sin parsear prosa,
+    que es justo lo que la tabla de alcance evita. Ante esa falta de dato la
+    respuesta no es "todas las HUs están sin auditar" sino "no se mide": la
+    alternativa daría un aviso permanente en todo proyecto con HUs que nunca
+    se auditó, y un aviso permanente no avisa.
+    """
+    report = sealed_audit(root)
+    if report is None:
+        return None
+    covered = parse_verdicts(report.read_text(encoding="utf-8"))
+    return DerivedCounter(
+        hus=tuple(hu for hu in hu_ids(root) if hu not in covered),
+        source=report,
+    )
+
+
 def run_audit(root: Path, only: str | None = None) -> Path:
     """Genera el reporte y el prompt de auditoría para la Decidora.
 

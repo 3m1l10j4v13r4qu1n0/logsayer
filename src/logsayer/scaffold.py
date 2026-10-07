@@ -9,6 +9,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from logsayer.config import LogsayerConfig
 from logsayer.core.inbox import INBOX_DIR, ensure_inbox
+from logsayer.core.presets import Preset
 
 STATIC_DIRS: tuple[str, ...] = (
     "01_global",
@@ -67,12 +68,17 @@ def scaffold(
     project_name: str,
     config: LogsayerConfig,
     adopt: bool = False,
+    preset: Preset | None = None,
 ) -> list[Path]:
     """Crea el árbol de capas y renderiza los documentos iniciales en `target`.
 
     En modo `adopt` (spec §5: `init --here` sobre un proyecto existente) no
     exige destino vacío y no sobrescribe archivos ya presentes: crea solo lo
     que falta. Devuelve los paths escritos (relativos a `target`).
+
+    El `preset` es opcional y se materializa una sola vez: copia sus umbrales al
+    `logsayer.toml` y deja `[project] preset` + `[adapters] enabled` como
+    snapshot. Sin preset, el TOML sale igual que siempre (spec §4, D30).
     """
     if not adopt:
         validate_target(target)
@@ -93,6 +99,8 @@ def scaffold(
         "bitacora_max_lines": config.bitacora_max_lines,
         "audit_threshold_hus": config.audit_threshold_hus,
         "inbox_max_age_days": config.inbox_max_age_days,
+        "preset": None if preset is None else preset.name,
+        "adapters_enabled": () if preset is None else preset.enabled,
     }
     inbox_ignore = target / INBOX_DIR / ".gitignore"
     fresh_inbox = not inbox_ignore.is_file()

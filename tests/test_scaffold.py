@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from logsayer.config import LogsayerConfig
+from logsayer.core.presets import load
 from logsayer.scaffold import (
     RENDERED_FILES,
     STATIC_DIRS,
@@ -118,3 +119,52 @@ def test_scaffold_adopt_requires_existing_target(tmp_path: Path) -> None:
     written = scaffold(tmp_path / "nuevo", "nuevo", LogsayerConfig(), adopt=True)
     assert (tmp_path / "nuevo" / "docs" / "project_state.md").is_file()
     assert any(str(p) == "docs/project_state.md" for p in written)
+
+
+def test_scaffold_without_preset_writes_no_new_tables(tmp_path: Path) -> None:
+    # El TOML de un proyecto sin preset tiene que salir como siempre: `[project]`
+    # y `[adapters]` son del preset, y escribirlos siempre agregaría una clave
+    # que ningún comando consume en un proyecto que nunca pidió un preset.
+    target = tmp_path / "proyecto"
+    _scaffold(target, "proyecto")
+    parsed = tomllib.loads((target / "logsayer.toml").read_text(encoding="utf-8"))
+    assert set(parsed) == {"logsayer"}
+
+
+def test_scaffold_materializes_the_preset(tmp_path: Path) -> None:
+    target = tmp_path / "proyecto"
+    preset = load("minimal")
+    scaffold(target, "proyecto", preset.thresholds, preset=preset)
+    parsed = tomllib.loads((target / "logsayer.toml").read_text(encoding="utf-8"))
+    assert parsed["project"]["preset"] == "minimal"
+    assert parsed["adapters"]["enabled"] == ["claude"]
+    assert parsed["logsayer"]["bitacora_max_lines"] == 800
+    assert parsed["logsayer"]["audit_threshold_hus"] == 5
+
+
+def test_preset_default_writes_the_same_thresholds_as_no_preset(tmp_path: Path) -> None:
+    # `default` es literalmente "no sobreescribir nada": si el dataclass cambia,
+    # los dos caminos tienen que seguir dando lo mismo, y por eso el test compara
+    # las dos salidas y no una lista de valores.
+    plain = tmp_path / "plain"
+    preset_target = tmp_path / "con-preset"
+    _scaffold(plain, "x")
+    preset = load("default")
+    scaffold(preset_target, "x", preset.thresholds, preset=preset)
+    plain_toml = (plain / "logsayer.toml").read_text(encoding="utf-8")
+    preset_toml = (preset_target / "logsayer.toml").read_text(encoding="utf-8")
+    plain_section = tomllib.loads(plain_toml)["logsayer"]
+    preset_section = tomllib.loads(preset_toml)["logsayer"]
+    assert plain_section == preset_section
+    assert "[project]" not in plain_toml
+
+
+def test_scaffold_never_generates_adapter_files(tmp_path: Path) -> None:
+    # D30: el preset declara y `agent add` ejecuta. Un `init --preset` que
+    # escribiera `.claude/agents/` rompería la promesa de `init --here` de no
+    # sobrescribir lo que ya está.
+    target = tmp_path / "proyecto"
+    preset = load("minimal")
+    scaffold(target, "proyecto", preset.thresholds, preset=preset)
+    for owned in (".opencode", ".claude", ".github"):
+        assert not (target / owned).exists()

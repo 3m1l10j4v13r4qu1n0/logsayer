@@ -10,7 +10,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from logsayer.config import LogsayerConfig
+from logsayer import __version__
+from logsayer.adapters.registry import REGISTRY, SUPPORTED
+from logsayer.config import LogsayerConfig, raw_config
 from logsayer.core import audit, memory
 from logsayer.core.checks import CheckResult, fail, ok, warn
 from logsayer.core.freshness import doc_timestamp
@@ -24,7 +26,8 @@ from logsayer.core.layers import (
     STORIES,
     TECHNICAL,
 )
-from logsayer.core.project import state_file
+from logsayer.core.presets import available
+from logsayer.core.project import read_closed_hus, state_file
 
 L1_GLOBAL = Path("docs") / GLOBAL
 L1_TECHNICAL = Path("docs") / TECHNICAL
@@ -259,6 +262,42 @@ def check_audit_coverage(root: Path) -> CheckResult:
     return ok("auditoria_completa")
 
 
+def check_hu_counter(root: Path) -> CheckResult:
+    """El contador de HUs del estado no queda por debajo del disco (D35).
+
+    Es el único número del marco que decide si hacía falta auditar, y era el
+    único que nadie verificaba: la auditoría del 2026-09-29 encontró el estado
+    declarando 2 HUs cerradas con 4 en disco, así que el umbral se cruzó sin
+    que nadie lo notara. `auditoria_completa` mide la cobertura de filas del
+    reporte, que es otra cosa; este check mide el desfase del contador.
+
+    La dirección es una sola (D7). Avisar cuando lo declarado supera a lo
+    derivado sería castigar el caso benigno —una HU borrada, un contador
+    redondeado hacia arriba— por un fallo que no existe; el fallo real es el
+    que subestima, porque el que retrasa la auditoría.
+
+    Es `warn` y no `fail`: corregir el contador es escribir prosa en el
+    snapshot, y bloquear el check obligaría a hacerlo antes de poder trabajar.
+    """
+    derived = audit.derived_closed_hus(root)
+    if derived is None:
+        return ok("contador_hus_al_dia", "sin auditoría sellada; no se mide")
+    declared = read_closed_hus(root)
+    if declared < derived.count:
+        listing = ", ".join(derived.hus)
+        return warn(
+            "contador_hus_al_dia",
+            f"el estado declara {declared} HU(s) cerrada(s) y el disco tiene "
+            f"{derived.count} sin veredicto en {derived.source.name}: {listing}"
+            "\n   → el contador que dispara la auditoría quedó desfasado: "
+            "actualizalo en docs/project_state.md o corré la auditoría",
+        )
+    return ok(
+        "contador_hus_al_dia",
+        f"declaradas {declared}, derivadas {derived.count}",
+    )
+
+
 def check_state_freshness(root: Path) -> CheckResult:
     """El snapshot no puede quedar viejo sin que nadie lo note (F7).
 
@@ -288,6 +327,97 @@ def check_state_freshness(root: Path) -> CheckResult:
             + "\n   → actualizá docs/project_state.md al cierre de la sesión",
         )
     return ok("estado_al_dia")
+
+
+def _toml_table(root: Path, table: str) -> dict[str, object] | None:
+    """La tabla `table` del `logsayer.toml` del proyecto, o None si no está.
+
+    Un TOML ilegible no es caso de estos checks: `run_suk()` ya lo corta antes
+    con `LogsayerConfig.load()`, que lee el mismo archivo con el mismo parser.
+    Acá `None` significa "esa tabla no está declarada", que es un proyecto
+    scaffoldeado sin preset — no un error.
+    """
+    section = raw_config(root / "logsayer.toml").get(table)
+    return section if isinstance(section, dict) else None
+
+
+def check_preset_known(root: Path) -> CheckResult:
+    """El preset que originó el `logsayer.toml` tiene que existir todavía.
+
+    El preset es un snapshot (spec §4): `init` copió sus valores al TOML y el
+    preset dejó de existir para este proyecto, así que la única forma que
+    importa es que el nombre **deje de estar en el paquete instalado** — un
+    proyecto scaffoldeado con un preset que ya no se distribuye queda apuntando
+    a algo que no existe, y el aviso nombra la versión para que se sepa de cuándo
+    quedó (§10).
+
+    Unidireccional como `contador_hus_al_dia`: no hay nada que corregir, porque
+    el proyecto no depende del preset para funcionar y los umbrales ya están
+    copiados.
+    """
+    project = _toml_table(root, "project")
+    declared = None if project is None else project.get("preset")
+    if declared is None:
+        return ok("preset_conocido", "sin preset declarado")
+    if not isinstance(declared, str) or declared in available():
+        return ok("preset_conocido", f"preset {declared!r} existe en el paquete")
+    return warn(
+        "preset_conocido",
+        f"el logsayer.toml declara el preset {declared!r} y no está en el paquete "
+        f"instalado ({__version__})\n"
+        f"   disponibles: {', '.join(available()) or 'ninguno'}\n"
+        "   → el preset fue snapshot: los umbrales ya están copiados y no cambian",
+    )
+
+
+def check_declared_adapters(root: Path) -> CheckResult:
+    """Lo declarado en `[adapters] enabled` tiene que ser ejecutable y estar.
+
+    Cubre la distancia entre **declarar** y **ejecutar** (D30): `init` escribe
+    la declaración y `agent add` es el único comando que escribe los archivos,
+    así que el hueco entre ambos es estructural y este check es lo que lo
+    muestra. Avisa en dos casos, y ninguno corrige:
+
+    - el nombre no está en `SUPPORTED`: la entrada no tiene adaptador que ejecutar;
+    - está en `SUPPORTED` pero **ninguno** de sus archivos existe en el proyecto:
+      se declaró algo que `agent add` todavía no escribió. Se mide contra el
+      conjunto entero y no archivo por archivo a propósito — quien escribió uno a
+      mano ya ejecutó la parte, y un archivo borrado a conciencia no es un
+      pendiente (D41).
+    """
+    adapters = _toml_table(root, "adapters")
+    if adapters is None:
+        return ok("adaptadores_declarados", "sin adaptadores declarados")
+    enabled = adapters.get("enabled", [])
+    if not isinstance(enabled, list) or not all(isinstance(n, str) for n in enabled):
+        return warn(
+            "adaptadores_declarados",
+            "[adapters] enabled debe ser una lista de texto",
+        )
+    if not enabled:
+        return ok("adaptadores_declarados", "ninguno declarado")
+
+    unknown = [name for name in enabled if name not in SUPPORTED]
+    if unknown:
+        return warn(
+            "adaptadores_declarados",
+            f"declarados y sin adaptador implementado: {', '.join(unknown)}"
+            f"\n   → logsayer agent add <agente>  (soporta: "
+            f"{', '.join(sorted(SUPPORTED))})",
+        )
+
+    pending: list[str] = []
+    for name in enabled:
+        spec = REGISTRY[name]
+        if not any((root / item.rel_path).is_file() for item in spec.files):
+            pending.append(f"{name} (logsayer agent add {name})")
+    if pending:
+        return warn(
+            "adaptadores_declarados",
+            "declarados pero sin archivos en el proyecto: " + "; ".join(pending)
+            + "\n   → declararlos es snapshot; escribirlos es `agent add` (D30)",
+        )
+    return ok("adaptadores_declarados", "declarados y generados: " + ", ".join(enabled))
 
 
 def check_inbox(root: Path, config: LogsayerConfig) -> CheckResult:
@@ -333,4 +463,7 @@ def run_suk(root: Path) -> list[CheckResult]:
         check_inbox(root, config),
         check_state_freshness(root),
         check_audit_coverage(root),
+        check_hu_counter(root),
+        check_preset_known(root),
+        check_declared_adapters(root),
     ]

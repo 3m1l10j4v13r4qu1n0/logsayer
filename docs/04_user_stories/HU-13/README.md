@@ -6,7 +6,7 @@
 ## Qué hay que construir
 
 - `HuItem.brief()` (D1): el input de **una** pasada — el README de la HU, la
-  base fija (`mission.md` + `project_state.md`) y las rutas que cita, con las
+  base fija (`docs/01_global/mission.md` + `project_state.md`) y las rutas que cita, con las
   muertas a la vista. Es lo que hace que auditar sea re-ejecutable.
 - `logsayer audit run --hu HU-XX`: reemite el brief de una sola pasada, para
   repetir la que falló. **No escribe reporte.**
@@ -24,7 +24,7 @@
    herencia del andamiaje se pierde y `auditoria_completa` mediría un alcance
    de 1. Un brief es un artefacto desechable, no un estado. Por eso el nombre
    lleva `.prompt.md`, que `_latest()` ya excluía del realm de reportes.
-2. **La base fija va siempre, las citas son mejora.** Sin `mission.md` y
+2. **La base fija va siempre, las citas son mejora.** Sin `docs/01_global/mission.md` y
    `project_state.md`, una HU sin citas arrancaría ciega; con ellas, la
    extracción de citas es una mejora y no un requisito. Una HU que no cita nada
    es normal y el brief lo dice, para que la Decidora no la salte.

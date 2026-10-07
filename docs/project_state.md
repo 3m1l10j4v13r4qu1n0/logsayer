@@ -7,95 +7,39 @@ fase: fase7
 
 ## Fase actual del roadmap
 
-**Fases 0 a 9 cerradas, y ahora las nueve tienen código.** La 7 fue la última que
-tenía diseño escrito y superficie sin implementación: cerró con HU-18
-(`init --preset`). Con ella no queda ninguna fase del roadmap a medio hacer — la
-10 sigue desplazada a propósito (solo entra si duele) y lo que queda abierto son
-deudas con fila propia, no fases.
+**Fases 0 a 9 cerradas con código, sin fases a medio hacer.** La 7 (`init --preset`,
+HU-18) fue la última con diseño escrito y superficie sin implementar; cerró el
+ciclo. La 10 (frontmatter extendido) sigue desplazada a propósito: solo entra si
+duele.
 
-La decisión de fondo la fijó el humano el 2026-09-30 y la implementación la
-ejecutó sin discutirla: el preset es un **snapshot, no una herencia viva**, así que
-`init` copia los valores al `logsayer.toml` y el preset deja de existir para ese
-proyecto. No hay que resolver "qué pasa si el preset cambia en la próxima versión"
-y el TOML se edita sin sorpresas. El precio —actualizar logsayer no actualiza los
-umbrales de un proyecto ya scaffoldeado— se paga con dos checks, no con una
-migración.
+- **Versión:** 0.8.0 publicada en PyPI el 2026-10-01 por el job de CI (tag `v0.8.0`).
+- **Auditoría:** 2026-10-02 aprobada (pasada el 2026-10-05), contador reseteado.
+  13 `cumple`, 1 `sin cambios` (HU-09), 2 `parcial` (HU-05 y HU-08), 0 `no cumple`.
+- **Deudas de esa auditoría cerradas:** D-12 (truthsayer de Claude con `Write`/`Edit`,
+  PR #25) y D-13 (citas muertas en HU-13/HU-16/HU-18, PR #26). El detalle vive en
+  `inbox/feedback_deudas_auditoria.md`.
+- **Feedback de README** (`inbox/feedback_README.md`, 2026-10-05) aplicado en
+  PR #27: roadmap reordenado, disclaimer al final, quick start limpio, fila
+  `audit run --hu`, candidatos de `doc route` sin el prefijo de capa repetido.
+  Quedan pendientes de esta fila solo los puntos de `project_state.md` (esta
+  reescritura) y la regeneración del ejemplo (D-10).
 
-Lo que salió del contraste con el código y no estaba escrito:
+Pendientes, en orden:
 
-- **`default` no declara la tabla `[logsayer]`.** Como la precedencia son dos
-  escalones (el preset elige; cada clave que declara pisa el default del dataclass
-  y las que omite caen al default), no declarar nada es literalmente "usar los
-  defaults". Así `init` e `init --preset default` coinciden **por construcción** y
-  no por valores repetidos: el test compara las dos salidas en vez de afirmar una
-  lista.
-- **`LogsayerConfig.from_mapping()`** saca la validación de `[logsayer]` de
-  `load()`. Sin eso, el preset se validaría contra un segundo validador y un preset
-  roto podría llegar al scaffold — que era justo el punto 1 de la fila D-08.
-- **D41**: `adaptadores_declarados` mide el **conjunto** de archivos de un
-  adaptador y no cada archivo. Quien escribió uno a mano ya ejecutó la parte, y un
-  subagente borrado a conciencia no es un pendiente; medirlo archivo por archivo
-  daría un aviso permanente en cada proyecto que depure, que es la clase de ruido
-  que D19 y D35 ya descartaron.
+1. **D-10** — regenerar `examples/hello-logsayer/` contra la superficie actual
+   (D34: al final del ciclo; el README ya lleva la nota provisoria). Es lo que
+   falta para cerrar HU-05 y HU-08 del todo.
+2. **D-11** — Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN`.
+3. **D-07** — fila sin cerrar de HU-17 en el reporte del 2026-10-02
+   (`auditoria_completa` avisa); resolver con `audit run --hu` o completando la fila.
+4. Fase 10 (frontmatter extendido) — desplazada, solo si duele.
 
-Fases 0 a 9 **cerradas**. La fase 3 cerró con HU-17: el adaptador de GitHub
-Copilot, el último de los tres, y el único que necesitó una decisión de diseño
-(D26 lo decidió así: uno solo, no los cuatro que el registro enumeraba).
-
-Copilot no tiene la convención de los otros dos. `agent add copilot` escribe
-ocho archivos en vez de cuatro, porque su convención parte el rol en dos:
-perfil en `.github/agents/<rol>.agent.md` (quién es el rol y qué herramientas
-tiene) e instrucción en `.github/instructions/logsayer/<rol>.instructions.md`
-(en qué rutas aplica). Si se escribiera uno solo, los cuatro prompts llegarían a
-todos los contextos del repo.
-
-Lo que se decidió leyendo la documentación oficial de GitHub, y que quedó
-escrito como decisión (spec §6):
-
-- **`applyTo` es filtro de contexto, no permiso.** Decide dónde se inyecta la
-  instrucción y no qué puede escribir el rol, así que la escritura única por capa
-  se escribe en la prosa de cada template, igual que en el adaptador de Claude
-  Code (D38). Los ocho archivos llevan `excludeAgent: "code-review"`, porque los
-  roles no existen en una sesión de code review (D39).
-- **No se genera `.github/copilot-instructions.md`.** Copilot consume `AGENTS.md`
-  de forma nativa y ese archivo ya es el prompt de proyecto que genera el CLI;
-  el archivo extra sería una segunda fuente de verdad para lo mismo (D37).
-- **Perfil con dos campos:** `description` y `tools`, con los alias canónicos de
-  la herramienta. Se omiten `target` (existe, pero sin valor sirve para GitHub.com
-  y para el IDE), `argument-hint` y `handoffs` (la doc los declara ignorados) e
-  `infer` (retirada). La Decidora declara `edit` porque escribe la tabla de
-  veredictos; la Reverenda Madre no, porque su única escritura es
-  `logsayer log add` (D40).
-
-Auditoría **2026-10-02** (scaffoldeada ese día, pasada ejecutada el 2026-10-05)
-aprobada y contador reseteado a 0. Resultado: 13 HUs `cumple`, 1 `sin cambios`
-por herencia (HU-09), 2 `parcial` y ninguna `no cumple`
-(`docs/06_audits/audit_2026-10-02.md`). Las dos parciales —HU-05 y HU-08—
-comparten una sola causa externa: `examples/hello-logsayer/README.md` promete
-una salida real del CLI que dejó de serlo cuando las fases 8 y 9 movieron la
-superficie (D-10, con D34 decidiendo el momento de regenerarlo). La síntesis no
-encontró contradicciones entre veredictos.
-
-La auditoría dejó dos deudas que siguen abiertas: **D-12** (el `truthsayer` de
-Claude declara `tools:` sin `Write`/`Edit` y por lo tanto no puede llenar la tabla
-que su propio prompt le asigna — la clase de defecto que D24 prohíbe al revés, y
-que en Copilot se resolvió al revés declarando `edit`) y **D-13** (los README de
-HU-13 y HU-16 citan rutas que no resuelven, lo que bloquea su herencia en cada
-corrida).
+La cola vive en `inbox/feedback_deudas_auditoria.md` y `inbox/feedback_README.md`.
 
 > El campo `fase` del frontmatter de arriba es el identificador de la fase: es lo
 > que `logsayer log add` convierte en el nombre del logbook. Solo se acepta un
 > slug corto (letras, dígitos, `-`, `_`, `.`); la frase de la línea de arriba es
 > contexto para humanos y no participa de esa decisión.
-
-Pendientes, en orden: las dos deudas de la auditoría del 2026-10-02 — D-12 (el
-`truthsayer` de Claude Code declara `tools:` sin `Write`/`Edit` y no puede llenar la
-tabla que su propio prompt le asigna) y D-13 (los README de HU-13 y HU-16 citan
-rutas que no resuelven); la regeneración de `examples/hello-logsayer/`, que era lo
-que faltaba para que la superficie quedara quieta (D-10, con D34 decidiendo el
-momento); y Trusted Publishing (OIDC) para borrar `PYPI_API_TOKEN` (D-11). La cola
-vive en `inbox/feedback_deudas_auditoria.md`. La fase 10 (frontmatter extendido)
-sigue desplazada: solo entra si duele.
 
 ## Decisiones activas
 
@@ -138,8 +82,7 @@ sigue desplazada: solo entra si duele.
 - D37 — No se genera `.github/copilot-instructions.md`: Copilot consume `AGENTS.md` de forma nativa y ese archivo ya es el prompt de proyecto que genera el CLI, así que el extra sería una segunda fuente de verdad para lo mismo — y dos archivos que se contradicen no los separa ningún check.
 - D38 — `applyTo` es **filtro de contexto, no permiso**: decide dónde se inyecta la instrucción y no qué puede escribir el rol. Por eso la escritura única por capa queda escrita en la prosa de cada template, como ya hacía el adaptador de Claude Code, y no en un campo. `target` existe y es válido, pero se omite: sin valor sirve para GitHub.com y para el IDE, y fijarlo reduciría el alcance. `argument-hint` y `handoffs` no se emiten porque la documentación los declara ignorados en GitHub.com, e `infer` porque está retirada.
 - D39 — Los ocho archivos de Copilot llevan `excludeAgent: "code-review"`: los cuatro roles son de una sesión de trabajo con contexto propio y no existen en una sesión de code review, donde el contexto es el diff.
-- D40 — En el adaptador de Copilot la Decidora declara `edit` y la Reverenda Madre no, porque su única escritura es `logsayer log add`. La falta equivalente del `truthsayer` de Claude Code (D-12) es una deuda aparte y no se corrigió en la misma HU: tocar dos adaptadores a la vez es cómo una HU deja de ser auditable.
-
+- D40 — En el adaptador de Copilot la Decidora declara `edit` y la Reverenda Madre no, porque su única escritura es `logsayer log add`. La falta equivalente del `truthsayer` de Claude Code (D-12) se cerró en su propia fila (PR #25).
 - D41 — `adaptadores_declarados` mide el conjunto de archivos de un adaptador, no cada archivo: avisa cuando un nombre de `[adapters] enabled` está en `SUPPORTED` pero **ninguno** de los archivos de su `AdapterSpec` existe. Quien escribió uno a mano ya ejecutó la parte de `agent add`, y un subagente borrado a conciencia no es un pendiente; medirlo archivo por archivo convertiría cada proyecto que depure su `.claude/agents/` en un aviso permanente, que es el ruido que D19 descartó para `indice_al_dia` y D35 para el contador.
 
 ## HUs cerradas desde la última auditoría
@@ -152,7 +95,7 @@ adaptador de Copilot (D-07), y **HU-18**, los presets de proyecto (D-08), que
 cerró la fase 7.
 
 El reporte del 2026-10-02 selló 16 HUs y su tabla está completa, así que
-`auditoria_completa` y `contador_hus_al_dia` avisan por HU-17 y HU-18 hasta la
-próxima corrida: es D20 funcionando — el alcance es la tabla sellada, no el
-directorio — y no un hueco. Umbral 3: falta 1 HU para que la Decidora vuelva a
-correr, y HU-19 sería la que la dispare.
+`auditoria_completa` avisa por HU-17 y HU-18 hasta la próxima corrida: es D20
+funcionando — el alcance es la tabla sellada, no el directorio — y no un hueco.
+Umbral 3: falta 1 HU para que la Decidora vuelva a correr, y HU-19 sería la que
+la dispare.

@@ -8,9 +8,7 @@ A Python CLI that scaffolds and coordinates a 5-layer documentary system for AI-
 
 Everything the agent needs to know about a project is written down by the same system that uses it — each layer answers one question, each document lives in exactly one layer, and every judgment lives in the CLI, not in the generated files.
 
-## Disclaimer (Dune homage)
-
-> This project uses names and concepts from Frank Herbert's *Dune* saga exclusively as a thematic reference and role metaphor. It is not affiliated with, sponsored by, or officially associated with Herbert Properties LLC, Legendary Entertainment, or any rights holders of the franchise. No art, logos, or protected material is reproduced — only concept/role names as a design analogy.
+The public surface (this README, command names, the docs) is in English; CLI output and generated content follow the templates, which are in Spanish — the language of generated content is a project decision, not a framework flag.
 
 ## Why logsayer
 
@@ -57,9 +55,9 @@ logsayer doc route inbox/contrato_backend.md
   primer candidato, pero eso no lo decide el CLI.
 
 Candidatos:
-  · 1 — Especificación → docs/02_technical/ — crear con: logsayer doc new technical <nombre>
-  · 1 — Especificación → docs/01_global/ — crear con: logsayer doc new global <nombre>
-  · 1 — Especificación → docs/04_user_stories/<HU>/ — crear con: logsayer spec new <HU>
+  · docs/02_technical/ — crear con: logsayer doc new technical <nombre>
+  · docs/01_global/ — crear con: logsayer doc new global <nombre>
+  · docs/04_user_stories/<HU>/ — crear con: logsayer spec new <HU>
 
 # 3. Create the document in the layer that was decided. The original is
 #    archived in inbox/_done/ and its provenance is recorded in "## Fuente".
@@ -120,6 +118,7 @@ pipx install logsayer
 # 1. Scaffold a new project
 logsayer init my-project
 cd my-project
+# ... or with a preset of conventions: logsayer init my-project --preset minimal
 
 # 2. Write the spec for a user story
 logsayer spec new HU-01
@@ -129,12 +128,11 @@ logsayer agent add opencode
 
 # 4. Start a session: check state, work the story
 logsayer state show
-logsayer check        # mechanical, and reports any unprocessed inbox/ document
+logsayer check        # mechanical: structure, pending inbox/ documents, no mixed layers
 # ... implement HU-01 ...
 
 # 5. Close the session: log it, audit when threshold is hit
 logsayer log add "HU-01 done: API + tests"
-logsayer check          # mechanical: structure, no mixed layers
 logsayer audit run      # semantic: spec vs real code report
 ```
 
@@ -168,6 +166,7 @@ A document arrived from another team? See
 | `logsayer log index` | `logsayer reverend-mother log index` | 3 | Rebuilds `00_index.md` from real files |
 | `logsayer check` | `logsayer suk doctor` | 4 | Mechanical checks: structure, no layer mixing, pending inbox, preset and declared adapters |
 | `logsayer audit run` | `logsayer truthsayer audit run` | 4 | Generates the audit report + semantic prompt |
+| `logsayer audit run --hu <HU>` | `logsayer truthsayer audit run --hu <HU>` | 4 | Re-emits the brief for one pass, to repeat a failed one (writes no report) |
 | `logsayer audit status` | `logsayer truthsayer audit status` | 4 | Shows HU counter vs threshold, last report |
 | `logsayer process check` | `logsayer fremen verify` | 5 | Process checks: Dor, coordination agreement, index freshness |
 
@@ -209,6 +208,10 @@ in the next version" to resolve, and the TOML stays editable without surprises. 
 price is that upgrading logsayer does not upgrade the thresholds of a project already
 scaffolded — which is what the two checks below are for.
 
+To update an old project's thresholds by hand: edit the values under `[logsayer]`
+in its `logsayer.toml`. That is the whole procedure — no migration command, no
+preset re-application; the file is the interface.
+
 Two mechanical checks keep the new keys honest, and neither corrects, only warns:
 
 - **`preset_conocido`** — the declared preset no longer ships in the installed
@@ -232,23 +235,30 @@ not applying it.
 
 ## Example session
 
-A full, real transcript — run against a freshly scaffolded project — lives in [`examples/hello-logsayer/`](examples/hello-logsayer/README.md). It walks through scaffold, story creation, logbook entries, verification, and agent adapters, with the actual output of every command.
+A full transcript — run against a freshly scaffolded project — lives in [`examples/hello-logsayer/`](examples/hello-logsayer/README.md). It walks through scaffold, story creation, logbook entries, verification, and agent adapters, with the actual output of every command.
+
+> **Note:** the transcript was captured against 0.6.0 and predates the `memory *` commands, `audit run --hu`, `audit reset` and `init --preset`. Regenerating it against the current CLI is queued; until then, take the command table above as the reference.
 
 ## Multi-agent design
 
-A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/adapters/<agent>/`) that only translates each tool's native file convention and calls the CLI. Adding a new agent means a new adapter, not new logic. See [`docs/` of this repo](logsayer_especificacion_maestra.md) (master spec) for the full architecture.
+A single engine (`logsayer/core/`) plus one thin adapter per agent (`logsayer/adapters/<agent>/`) that only translates each tool's native file convention and calls the CLI. Adding a new agent means a new adapter, not new logic. See the [master spec](logsayer_especificacion_maestra.md) for the full architecture.
 
 ## Roadmap
 
-- **0–6 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`), mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
+- **0–2 (done):** naming & manifest, `init`, core commands (`spec`, `state`, `log`, `audit`).
 - **3 (done):** the adapter layer, one engine and three thin adapters. Copilot was the last one, and it was the only one that needed a decision: Copilot separates the agent profile from the path-scoped instructions, so `agent add copilot` writes eight files — four profiles in `.github/agents/` and four instructions in `.github/instructions/logsayer/`.
+- **4–6 (done):** mechanical validation (`check`, `process check`), docs & publishing, incoming documents (`inbox/`, `doc route`, `doc new`).
+- **7 (done):** community presets — `init --preset <default|minimal>` writes a bundle of conventions once, as TOML inside the package. Further adapters are added on demand, not on a schedule: `agent add` names the ones not yet implemented.
 - **8 (done):** selective memory — a generated index over `docs/`, a `tags` frontmatter contract, and a deterministic `memory search` (what to read first, never what is auditable).
 - **9 (done):** audit by pass — the scope stops being a promise in the prompt and becomes a table the CLI counts, one row per HU on disk, with the `auditoria_completa` check.
-- **7 (done):** community presets — `init --preset <default|minimal>` writes a bundle of conventions once, as TOML inside the package. Still open in that phase: more agents on demand (cursor, gemini, hermes).
 - **10 (deferred):** extended frontmatter — it only lands if it hurts.
+
+## Disclaimer (Dune homage)
+
+> This project uses names and concepts from Frank Herbert's *Dune* saga exclusively as a thematic reference and role metaphor. It is not affiliated with, sponsored by, or officially associated with Herbert Properties LLC, Legendary Entertainment, or any rights holders of the franchise. No art, logos, or protected material is reproduced — only concept/role names as a design analogy.
 
 ## Acknowledgment & license
 
 - MIT — see [LICENSE](LICENSE).
-- Built around the 5-layer documentary system described in the master spec.
-- Names and concepts from *Dune* are used as a thematic role metaphor only (full disclaimer at the top of this document).
+- Built around the 5-layer documentary system described in the [master spec](logsayer_especificacion_maestra.md).
+- Names and concepts from *Dune* are used as a thematic role metaphor only (full disclaimer above).

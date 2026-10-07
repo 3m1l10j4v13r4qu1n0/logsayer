@@ -45,6 +45,17 @@ def test_route_does_not_decide_global_vs_technical(cwd_project: Path) -> None:
     assert "logsayer doc new global" in result.output
 
 
+def test_route_candidatos_no_repiten_la_capa(cwd_project: Path) -> None:
+    """Los tres candidatos de Capa 1 van al mismo nivel: en la lista corta el
+    prefijo '1 — Especificación →' repetido tres veces es ruido (el mismo que
+    distingue de 'Capa 4 →' y 'Capa 3 →' en la tabla completa, donde sí va)."""
+    result = runner.invoke(app, ["doc", "route", "inbox/contrato_api.md"])
+    assert result.exit_code == 0, result.output
+    candidatos = result.output.split("Candidatos:")[1]
+    assert "1 — Especificación" not in candidatos
+    assert "· docs/02_technical/ — crear con: logsayer doc new technical" in candidatos
+
+
 def test_route_hints_technical_tokens_without_deciding(cwd_project: Path) -> None:
     result = runner.invoke(app, ["doc", "route", "inbox/contrato_api.md"])
     assert result.exit_code == 0, result.output

@@ -259,7 +259,8 @@ def doc_route(
         typer.echo(f"→ pista:      {verdict.hint}")
     typer.echo("\nCandidatos:")
     for route in verdict.candidates:
-        typer.echo(f"  · {route.destination} — crear con: {route.command}")
+        destino = route.destination.split(" → ", 1)[-1]
+        typer.echo(f"  · {destino} — crear con: {route.command}")
     typer.echo(
         "\nElegí la fila que corresponde y creá el documento con ese comando. "
         "Si ninguna aplica, la fila es 'El por qué o el cómo de lo que ya se "
